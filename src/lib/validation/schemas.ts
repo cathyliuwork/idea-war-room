@@ -47,3 +47,48 @@ export const RawIdeaInputSchema = z.object({
 });
 
 export type RawIdeaInput = z.infer<typeof RawIdeaInputSchema>;
+
+/**
+ * Research Snapshot Schemas (Output from F-03 Research Engine)
+ */
+
+export const CompetitorSchema = z.object({
+  name: z.string().min(1),
+  url: z.string().url(),
+  summary: z.string().min(1),
+  pricing: z.string().optional(),
+  strengths: z.array(z.string()),
+  weaknesses: z.array(z.string()),
+});
+
+export const CommunitySignalSchema = z.object({
+  source: z.enum(['reddit', 'ycombinator', 'forum', 'review_site']),
+  url: z.string().url(),
+  title: z.string().min(1),
+  snippet: z.string().min(1),
+  sentiment: z.enum(['positive', 'negative', 'neutral']),
+  themes: z.array(z.string()),
+  publishedDate: z.string().optional(),
+});
+
+export const RegulatorySignalSchema = z.object({
+  regulation: z.string().min(1),
+  summary: z.string().min(1),
+  compliance_requirements: z.array(z.string()),
+  penalties: z.string(),
+  applicability: z.string(),
+});
+
+export const ResearchSnapshotSchema = z.object({
+  competitor_queries: z.array(z.string()),
+  community_queries: z.array(z.string()),
+  regulatory_queries: z.array(z.string()),
+  competitors: z.array(CompetitorSchema),
+  community_signals: z.array(CommunitySignalSchema),
+  regulatory_signals: z.array(RegulatorySignalSchema),
+});
+
+export type Competitor = z.infer<typeof CompetitorSchema>;
+export type CommunitySignal = z.infer<typeof CommunitySignalSchema>;
+export type RegulatorySignal = z.infer<typeof RegulatorySignalSchema>;
+export type ResearchSnapshot = z.infer<typeof ResearchSnapshotSchema>;
