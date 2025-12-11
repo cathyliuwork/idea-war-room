@@ -92,3 +92,60 @@ export type Competitor = z.infer<typeof CompetitorSchema>;
 export type CommunitySignal = z.infer<typeof CommunitySignalSchema>;
 export type RegulatorySignal = z.infer<typeof RegulatorySignalSchema>;
 export type ResearchSnapshot = z.infer<typeof ResearchSnapshotSchema>;
+
+/**
+ * MVTA Damage Report Schemas (Output from F-04 Red Team Analysis)
+ */
+
+export const VulnerabilitySchema = z.object({
+  vector: z.enum([
+    'technical',
+    'market',
+    'social',
+    'legal',
+    'narrative',
+  ]),
+  attack_name: z.string().min(1),
+  severity_score: z.number().min(1).max(5),
+  rationale: z.string().min(1),
+  evidence_citations: z.array(z.string()).default([]),
+  recommendation: z.string().optional(),
+});
+
+export const CascadingFailureSchema = z.object({
+  trigger: z.string().min(1),
+  chain: z.array(z.string()).min(2),
+  final_impact: z.string().min(1),
+});
+
+export const VectorSynthesisSchema = z.object({
+  vector: z.enum([
+    'technical',
+    'market',
+    'social',
+    'legal',
+    'narrative',
+  ]),
+  overall_score: z.number().min(1).max(5),
+  summary: z.string().min(1),
+  critical_vulnerabilities: z.array(z.string()),
+});
+
+export const RecommendationSchema = z.object({
+  priority: z.enum(['high', 'medium', 'low']),
+  action: z.string().min(1),
+  rationale: z.string().min(1),
+});
+
+export const MVTAReportSchema = z.object({
+  vulnerabilities: z.array(VulnerabilitySchema).min(10),
+  cascading_failures: z.array(CascadingFailureSchema).default([]),
+  vector_synthesis: z.array(VectorSynthesisSchema).length(5),
+  recommendations: z.array(RecommendationSchema).min(3),
+});
+
+export type Vulnerability = z.infer<typeof VulnerabilitySchema>;
+export type CascadingFailure = z.infer<typeof CascadingFailureSchema>;
+export type VectorSynthesis = z.infer<typeof VectorSynthesisSchema>;
+export type Recommendation = z.infer<typeof RecommendationSchema>;
+export type MVTAReport = z.infer<typeof MVTAReportSchema>;
