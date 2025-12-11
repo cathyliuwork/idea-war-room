@@ -44,11 +44,11 @@ export default function IntakePage() {
       }
 
       const data = await res.json();
-      alert('Idea structured successfully! Next: Research phase (F-03)');
+      alert('Idea structured successfully! Next: Research phase');
       console.log('Structured idea:', data.structured_idea);
 
-      // Navigate back to dashboard for now
-      router.push('/dashboard');
+      // Navigate to research page
+      router.push(`/analyze/${sessionId}/research`);
     } catch (err) {
       setError((err as Error).message);
     } finally {

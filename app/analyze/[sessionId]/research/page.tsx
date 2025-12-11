@@ -56,12 +56,11 @@ export default function ResearchPage() {
           `✅ Found ${data.competitors_found} competitors\n` +
           `✅ Analyzed ${data.community_signals_found} community discussions\n` +
           `✅ Identified ${data.regulatory_signals_found} regulatory considerations\n\n` +
-          `Next: MVTA Red Team Analysis (F-04 - not yet implemented)`
+          `Navigating to MVTA Red Team Analysis...`
       );
 
-      // For now, navigate back to dashboard
-      // Later: navigate to /analyze/${sessionId}/analysis
-      router.push('/dashboard');
+      // Navigate to analysis page
+      router.push(`/analyze/${sessionId}/analysis`);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -137,10 +136,10 @@ export default function ResearchPage() {
               </div>
 
               <button
-                onClick={() => router.push('/dashboard')}
+                onClick={() => router.push(`/analyze/${sessionId}/analysis`)}
                 className="px-6 py-3 bg-brand-primary text-white font-semibold rounded-lg hover:bg-brand-hover transition-colors shadow-sm"
               >
-                Continue (F-04 not implemented yet - back to Dashboard)
+                Start MVTA Red Team Analysis
               </button>
             </div>
           )}

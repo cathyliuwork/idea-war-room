@@ -55,12 +55,11 @@ export default function AnalysisPage() {
           `Red Team found:\n` +
           `- ${data.vulnerabilities_count} vulnerabilities across 5 vectors\n` +
           `- ${data.cascading_failures_count} cascading failure chains\n\n` +
-          `Next: Damage Report Display (F-05 - not yet implemented)`
+          `Navigating to Damage Report...`
       );
 
-      // For now, navigate back to dashboard
-      // Later: navigate to /analyze/${sessionId}/report
-      router.push('/dashboard');
+      // Navigate to damage report page
+      router.push(`/analyze/${sessionId}/report`);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -138,10 +137,10 @@ export default function AnalysisPage() {
               </div>
 
               <button
-                onClick={() => router.push('/dashboard')}
+                onClick={() => router.push(`/analyze/${sessionId}/report`)}
                 className="px-6 py-3 bg-brand-primary text-white font-semibold rounded-lg hover:bg-brand-hover transition-colors shadow-sm"
               >
-                Continue (F-05 not implemented - back to Dashboard)
+                View Damage Report
               </button>
             </div>
           )}
