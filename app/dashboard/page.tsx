@@ -87,8 +87,12 @@ export default function Dashboard() {
           </p>
 
           <button
-            className="px-6 py-3 bg-brand-primary text-white font-semibold rounded-lg hover:bg-brand-hover transition-colors shadow-sm"
-            onClick={() => alert('Feature coming in F-02: Idea Intake Form')}
+            className="px-6 py-3 bg-brand-primary text-white font-semibold rounded-lg hover:bg-brand-hover transition-colors shadow-sm disabled:opacity-50"
+            onClick={async () => {
+              const res = await fetch('/api/sessions/create', { method: 'POST' });
+              const data = await res.json();
+              router.push(`/analyze/${data.session_id}/intake`);
+            }}
           >
             Start New Analysis
           </button>
