@@ -109,7 +109,7 @@ export const VulnerabilitySchema = z.object({
   severity_score: z.number().min(1).max(5),
   rationale: z.string().min(1),
   evidence_citations: z.array(z.string()).default([]),
-  recommendation: z.string().optional(),
+  recommendation: z.string().nullish(), // Allow null, undefined, or string
 });
 
 export const CascadingFailureSchema = z.object({

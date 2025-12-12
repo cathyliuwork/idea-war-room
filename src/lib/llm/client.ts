@@ -48,39 +48,78 @@ export async function callLLM(request: LLMRequest): Promise<LLMResponse> {
     throw new Error('AI_BUILDERS_API_KEY not configured');
   }
 
+  const model = request.model || DEFAULT_MODEL;
+  const isGpt5 = model === 'gpt-5';
+
+  // GPT-5 has special restrictions:
+  // - Only supports temperature=1.0
+  // - Uses max_completion_tokens instead of max_tokens
+  const requestBody: any = {
+    model,
+    messages: request.messages,
+    temperature: isGpt5 ? 1.0 : (request.temperature ?? DEFAULT_TEMPERATURE),
+    ...(request.responseFormat === 'json_object' && {
+      response_format: { type: 'json_object' },
+    }),
+  };
+
+  // Use max_completion_tokens for gpt-5, max_tokens for others
+  if (isGpt5) {
+    requestBody.max_completion_tokens = request.maxTokens ?? DEFAULT_MAX_TOKENS;
+  } else {
+    requestBody.max_tokens = request.maxTokens ?? DEFAULT_MAX_TOKENS;
+  }
+
+  // Debug: Log request size
+  const promptText = request.messages.map(m => m.content).join(' ');
+  const estimatedTokens = Math.ceil(promptText.length / 4); // Rough estimate
+  console.log(`🔍 Request - Model: ${model}, Est. prompt tokens: ${estimatedTokens}, Max completion tokens: ${requestBody.max_tokens || requestBody.max_completion_tokens}`);
+
   const response = await fetch(`${apiUrl}/v1/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({
-      model: request.model || DEFAULT_MODEL,
-      messages: request.messages,
-      temperature: request.temperature ?? DEFAULT_TEMPERATURE,
-      max_tokens: request.maxTokens ?? DEFAULT_MAX_TOKENS,
-      ...(request.responseFormat === 'json_object' && {
-        response_format: { type: 'json_object' },
-      }),
-    }),
+    body: JSON.stringify(requestBody),
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(`LLM API error: ${error.error || response.statusText}`);
+    console.error('❌ LLM API error - Status:', response.status, response.statusText);
+    const errorText = await response.text();
+    console.error('❌ LLM API error - Response:', errorText);
+    let error;
+    try {
+      error = JSON.parse(errorText);
+    } catch {
+      error = { error: errorText || 'Unknown error' };
+    }
+    throw new Error(`LLM API error (${response.status}): ${error.error || response.statusText}`);
   }
 
   const data = await response.json();
+
+  // Debug: Log raw API response
+  console.log('🤖 LLM API Response:', JSON.stringify(data, null, 2));
+  console.log('🤖 Choices array length:', data.choices?.length);
+  console.log('🤖 First choice:', data.choices?.[0]);
+
   const choice = data.choices[0];
 
+  if (!choice || !choice.message || choice.message.content === undefined) {
+    console.error('❌ LLM API returned invalid response structure');
+    console.error('Full response:', JSON.stringify(data));
+    throw new Error('LLM API returned invalid response: missing choice or message content');
+  }
+
   return {
-    content: choice.message.content,
+    content: choice.message.content || '',
     usage: {
-      promptTokens: data.usage.prompt_tokens,
-      completionTokens: data.usage.completion_tokens,
-      totalTokens: data.usage.total_tokens,
+      promptTokens: data.usage?.prompt_tokens || 0,
+      completionTokens: data.usage?.completion_tokens || 0,
+      totalTokens: data.usage?.total_tokens || 0,
     },
-    model: data.model,
+    model: data.model || 'unknown',
   };
 }
 

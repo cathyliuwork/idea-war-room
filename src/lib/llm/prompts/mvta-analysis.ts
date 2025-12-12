@@ -119,6 +119,11 @@ export async function runMVTAAnalysis(
   structuredIdea: StructuredIdea,
   researchContext: ResearchContext
 ): Promise<MVTAReport> {
+  // Limit data to reduce prompt size and avoid API errors
+  const topCompetitors = researchContext.competitors.slice(0, 5);
+  const topCommunitySignals = researchContext.community_signals.slice(0, 10);
+  const allRegulatorySignals = researchContext.regulatory_signals;
+
   const userPrompt = `Startup Idea:
 High Concept: ${structuredIdea.high_concept}
 Value Proposition: ${structuredIdea.value_proposition}
@@ -134,22 +139,20 @@ Assumptions:
 
 Research Evidence:
 
-Competitors Found (${researchContext.competitors.length}):
-${researchContext.competitors.map((c, i) => `${i + 1}. ${c.name} (${c.url})
+Competitors Found (showing top ${topCompetitors.length} of ${researchContext.competitors.length}):
+${topCompetitors.map((c, i) => `${i + 1}. ${c.name}
    Summary: ${c.summary}
-   Strengths: ${c.strengths.join(', ')}
-   Weaknesses: ${c.weaknesses.join(', ')}`).join('\n\n')}
+   Strengths: ${c.strengths.slice(0, 3).join(', ')}
+   Weaknesses: ${c.weaknesses.slice(0, 3).join(', ')}`).join('\n\n')}
 
-Community Signals (${researchContext.community_signals.length}):
-${researchContext.community_signals.map((s, i) => `${i + 1}. [${s.source}] ${s.title}
+Community Signals (showing top ${topCommunitySignals.length} of ${researchContext.community_signals.length}):
+${topCommunitySignals.map((s, i) => `${i + 1}. [${s.source}] ${s.title}
    Sentiment: ${s.sentiment}
-   Snippet: ${s.snippet}
-   Themes: ${s.themes.join(', ')}`).join('\n\n')}
+   Themes: ${s.themes.slice(0, 3).join(', ')}`).join('\n\n')}
 
-${researchContext.regulatory_signals.length > 0 ? `Regulatory Context:
-${researchContext.regulatory_signals.map((r, i) => `${i + 1}. ${r.regulation}
-   Summary: ${r.summary}
-   Requirements: ${r.compliance_requirements.join(', ')}`).join('\n\n')}` : 'Regulatory Context: None identified'}
+${allRegulatorySignals.length > 0 ? `Regulatory Context (${allRegulatorySignals.length} signals):
+${allRegulatorySignals.map((r, i) => `${i + 1}. ${r.regulation}
+   Summary: ${r.summary.substring(0, 200)}...`).join('\n\n')}` : 'Regulatory Context: None identified'}
 
 Execute MVTA red team analysis. Output ONLY the JSON.`;
 
@@ -158,9 +161,9 @@ Execute MVTA red team analysis. Output ONLY the JSON.`;
       { role: 'system', content: SYSTEM_PROMPT },
       { role: 'user', content: userPrompt },
     ],
-    model: 'gemini-2.5-pro',
+    model: 'grok-4-fast', // Switched from gemini-2.5-pro due to 500 errors
     temperature: 0.7, // Creative but consistent
-    maxTokens: 8000, // Damage reports are long
+    maxTokens: 4000, // Reduced from 8000 to avoid API errors
     responseFormat: 'json_object',
   });
 

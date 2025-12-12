@@ -110,14 +110,40 @@ export async function synthesizeCompetitors(
     responseFormat: 'json_object',
   });
 
-  // Clean markdown code blocks
+  // Extract JSON from response (handle various formats)
   let jsonContent = response.content.trim();
-  if (jsonContent.startsWith('```')) {
-    jsonContent = jsonContent.replace(/^```(?:json)?\s*\n?/, '');
-    jsonContent = jsonContent.replace(/\n?```\s*$/, '');
+
+  // Check if content is empty
+  if (!jsonContent || jsonContent.length === 0) {
+    console.warn('⚠️ LLM returned empty content for synthesis');
+    return [];
   }
 
-  const parsed = JSON.parse(jsonContent);
+  // Try to extract JSON from markdown code block first
+  const markdownMatch = jsonContent.match(/```json\s*\n([\s\S]*?)\n```/);
+  if (markdownMatch) {
+    jsonContent = markdownMatch[1].trim();
+    console.log('✅ Extracted JSON from markdown code block');
+  } else if (!jsonContent.startsWith('{') && !jsonContent.startsWith('[')) {
+    // If doesn't start with { or [, try to find JSON pattern anywhere in the text
+    const jsonMatch = jsonContent.match(/[\{\[][[\s\S]*[\}\]]/);
+    if (jsonMatch) {
+      jsonContent = jsonMatch[0].trim();
+      console.log('✅ Extracted JSON object/array from text');
+    } else {
+      console.warn('⚠️ Could not find JSON pattern in response');
+      return [];
+    }
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(jsonContent);
+  } catch (error) {
+    console.error('❌ JSON Parse Error in synthesis:', error);
+    console.error('📄 Content that failed to parse:', jsonContent.substring(0, 500));
+    return [];
+  }
 
   // Handle both array and object with "competitors" key
   const competitorsArray = Array.isArray(parsed) ? parsed : (parsed.competitors || []);
@@ -212,14 +238,40 @@ export async function synthesizeCommunitySignals(
     responseFormat: 'json_object',
   });
 
-  // Clean markdown code blocks
+  // Extract JSON from response (handle various formats)
   let jsonContent = response.content.trim();
-  if (jsonContent.startsWith('```')) {
-    jsonContent = jsonContent.replace(/^```(?:json)?\s*\n?/, '');
-    jsonContent = jsonContent.replace(/\n?```\s*$/, '');
+
+  // Check if content is empty
+  if (!jsonContent || jsonContent.length === 0) {
+    console.warn('⚠️ LLM returned empty content for synthesis');
+    return [];
   }
 
-  const parsed = JSON.parse(jsonContent);
+  // Try to extract JSON from markdown code block first
+  const markdownMatch = jsonContent.match(/```json\s*\n([\s\S]*?)\n```/);
+  if (markdownMatch) {
+    jsonContent = markdownMatch[1].trim();
+    console.log('✅ Extracted JSON from markdown code block');
+  } else if (!jsonContent.startsWith('{') && !jsonContent.startsWith('[')) {
+    // If doesn't start with { or [, try to find JSON pattern anywhere in the text
+    const jsonMatch = jsonContent.match(/[\{\[][[\s\S]*[\}\]]/);
+    if (jsonMatch) {
+      jsonContent = jsonMatch[0].trim();
+      console.log('✅ Extracted JSON object/array from text');
+    } else {
+      console.warn('⚠️ Could not find JSON pattern in response');
+      return [];
+    }
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(jsonContent);
+  } catch (error) {
+    console.error('❌ JSON Parse Error in synthesis:', error);
+    console.error('📄 Content that failed to parse:', jsonContent.substring(0, 500));
+    return [];
+  }
 
   // Handle both array and object with "signals" or "community_signals" key
   const signalsArray = Array.isArray(parsed)
@@ -311,14 +363,40 @@ export async function synthesizeRegulatorySignals(
     responseFormat: 'json_object',
   });
 
-  // Clean markdown code blocks
+  // Extract JSON from response (handle various formats)
   let jsonContent = response.content.trim();
-  if (jsonContent.startsWith('```')) {
-    jsonContent = jsonContent.replace(/^```(?:json)?\s*\n?/, '');
-    jsonContent = jsonContent.replace(/\n?```\s*$/, '');
+
+  // Check if content is empty
+  if (!jsonContent || jsonContent.length === 0) {
+    console.warn('⚠️ LLM returned empty content for synthesis');
+    return [];
   }
 
-  const parsed = JSON.parse(jsonContent);
+  // Try to extract JSON from markdown code block first
+  const markdownMatch = jsonContent.match(/```json\s*\n([\s\S]*?)\n```/);
+  if (markdownMatch) {
+    jsonContent = markdownMatch[1].trim();
+    console.log('✅ Extracted JSON from markdown code block');
+  } else if (!jsonContent.startsWith('{') && !jsonContent.startsWith('[')) {
+    // If doesn't start with { or [, try to find JSON pattern anywhere in the text
+    const jsonMatch = jsonContent.match(/[\{\[][[\s\S]*[\}\]]/);
+    if (jsonMatch) {
+      jsonContent = jsonMatch[0].trim();
+      console.log('✅ Extracted JSON object/array from text');
+    } else {
+      console.warn('⚠️ Could not find JSON pattern in response');
+      return [];
+    }
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(jsonContent);
+  } catch (error) {
+    console.error('❌ JSON Parse Error in synthesis:', error);
+    console.error('📄 Content that failed to parse:', jsonContent.substring(0, 500));
+    return [];
+  }
 
   // Handle both array and object with "regulations" or "regulatory_signals" key
   const regulationsArray = Array.isArray(parsed)

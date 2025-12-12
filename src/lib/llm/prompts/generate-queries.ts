@@ -34,7 +34,9 @@ Given a structured startup idea, generate targeted search queries to gather evid
 - Industry-specific regulations
 - Return empty array if domain is not heavily regulated
 
-Output ONLY valid JSON matching this schema:
+CRITICAL: Return ONLY the JSON object. Do not include any explanatory text, markdown formatting, or commentary before or after the JSON.
+
+JSON Schema:
 {
   "competitor_queries": ["string"],
   "community_queries": ["string"],
@@ -45,7 +47,8 @@ Rules:
 - Make queries specific and actionable
 - Include year "2025" or "2024" for recent info
 - Avoid overly broad queries
-- Focus on evidence that would inform MVTA red team analysis`;
+- Focus on evidence that would inform MVTA red team analysis
+- RETURN ONLY THE JSON OBJECT - NO OTHER TEXT`;
 
 const ResearchQueriesSchema = z.object({
   competitor_queries: z.array(z.string()).min(3).max(10),
@@ -87,18 +90,56 @@ Generate research queries to validate/challenge these assumptions and understand
       { role: 'user', content: userPrompt },
     ],
     model: 'gemini-2.5-pro',
-    temperature: 0.5, // Creative but structured
-    maxTokens: 1000,
+    temperature: 0.5,
+    maxTokens: 2000, // Increased from 1000 to handle long prompts
     responseFormat: 'json_object',
   });
 
-  // Clean markdown code blocks if present
+  // Debug: Log raw LLM response
+  console.log('🔍 LLM Response length:', response.content.length);
+  console.log('🔍 LLM Response first 500 chars:', response.content.substring(0, 500));
+  console.log('🔍 LLM Response FULL:', response.content);
+
+  // Extract JSON from response (handle various formats)
   let jsonContent = response.content.trim();
-  if (jsonContent.startsWith('```')) {
-    jsonContent = jsonContent.replace(/^```(?:json)?\s*\n?/, '');
-    jsonContent = jsonContent.replace(/\n?```\s*$/, '');
+
+  // Check if content is empty
+  if (!jsonContent || jsonContent.length === 0) {
+    throw new Error(
+      `LLM returned empty content. Raw response length: ${response.content.length}`
+    );
   }
 
-  const parsed = JSON.parse(jsonContent);
+  // Try to extract JSON from markdown code block first
+  const markdownMatch = jsonContent.match(/```json\s*\n([\s\S]*?)\n```/);
+  if (markdownMatch) {
+    jsonContent = markdownMatch[1].trim();
+    console.log('✅ Extracted JSON from markdown code block');
+  } else if (!jsonContent.startsWith('{')) {
+    // If doesn't start with {, try to find JSON object pattern anywhere in the text
+    const jsonMatch = jsonContent.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      jsonContent = jsonMatch[0].trim();
+      console.log('✅ Extracted JSON object from text');
+    } else {
+      console.warn('⚠️ Could not find JSON pattern, using content as-is');
+    }
+  }
+
+  console.log('✅ Final JSON content length:', jsonContent.length);
+  console.log('✅ First 200 chars:', jsonContent.substring(0, 200));
+
+  let parsed;
+  try {
+    parsed = JSON.parse(jsonContent);
+  } catch (error) {
+    console.error('❌ JSON Parse Error:', error);
+    console.error('📄 Content that failed to parse:', jsonContent.substring(0, 500));
+    throw new Error(
+      `Failed to parse LLM response as JSON: ${(error as Error).message}. ` +
+      `Content preview: ${jsonContent.substring(0, 200)}`
+    );
+  }
+
   return ResearchQueriesSchema.parse(parsed);
 }
