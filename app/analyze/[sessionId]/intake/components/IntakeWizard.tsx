@@ -135,8 +135,8 @@ export default function IntakeWizard({ sessionId }: IntakeWizardProps) {
       // Clear localStorage draft
       localStorage.removeItem(`idea-intake-draft-${sessionId}`);
 
-      // Navigate to research page
-      router.push(`/analyze/${sessionId}/research`);
+      // Navigate to choice page
+      router.push(`/analyze/${sessionId}/choice`);
     } catch (error) {
       console.error('Submit failed:', error);
       alert((error as Error).message);

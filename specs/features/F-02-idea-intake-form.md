@@ -37,8 +37,9 @@
 - S-03: Database Schema (ideas table, sessions table) **Needs source field added**
 
 **Used By**:
-- F-03: Research Engine (uses structured idea to generate queries)
+- F-03: Idea Analysis Choice Page (receives idea data, displays summary)
 - F-04: MVTA Red Team Simulation (analyzes structured idea)
+- F-08: Research Engine (uses structured idea to generate queries)
 
 **Implementation Status**:
 - [x] PRD documented
@@ -126,8 +127,8 @@
    - System: Validates entire form
    - System: Calls `POST /api/sessions/[sessionId]/idea` (no LLM call)
    - System: Saves to database (source='form')
-   - System: Updates session status='research'
-   - System: Navigates to `/analyze/[sessionId]/research`
+   - System: Updates session status='choice'
+   - System: Navigates to `/analyze/[sessionId]/choice` (F-03: Idea Analysis Choice Page)
 
 **Error Handling**:
 - **Validation failure**: Display red error text below field, red border on field
@@ -138,6 +139,19 @@
 - **Exit mid-flow**: localStorage draft preserved, restore on return
 - **Go back**: All filled data retained
 - **Duplicate submission**: Backend checks if session already has idea, prevent duplicate creation
+
+---
+
+### Navigation After Submission
+
+After user submits idea form:
+- Session status is set to `'choice'`
+- User is navigated to `/analyze/[sessionId]/choice` (Choice Page - see F-03)
+- Choice Page displays idea summary and two independent action buttons:
+  1. **Research Online**: Optional evidence-gathering phase (see F-08)
+  2. **MVTA Analysis**: Core red team simulation (see F-04, can run with or without research)
+
+**Key Change from v1.0**: Previously navigated directly to Research page. Now navigates to Choice page to support branching workflow where users can choose to skip research and go straight to MVTA analysis.
 
 ---
 
@@ -386,8 +400,8 @@ interface FormNavigationProps {
 - [ ] Page reload restores draft
 - [ ] Can go back to previous step to modify data
 - [ ] Submit success saves data to database (source='form')
-- [ ] Session status updates to 'research'
-- [ ] Submit redirects to research page
+- [ ] Session status updates to 'choice'
+- [ ] Submit redirects to choice page (F-03)
 - [ ] Error handling: clear error messages displayed
 - [ ] Mobile responsive design works
 

@@ -1,7 +1,7 @@
-# F-08: Feedback Collection
+# F-10: Feedback Collection
 
-**Version**: 1.0
-**Last Updated**: 2025-12-08
+**Version**: 1.1
+**Last Updated**: 2025-12-11
 **Priority**: MEDIUM
 **Status**: ✅ Spec Complete
 

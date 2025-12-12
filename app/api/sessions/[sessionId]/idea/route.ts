@@ -61,10 +61,10 @@ export async function POST(
       throw new Error(`Failed to save idea: ${error.message}`);
     }
 
-    // Update session status to 'research' (ready for next phase)
+    // Update session status to 'choice' (ready for user to select next action)
     await supabase
       .from('sessions')
-      .update({ status: 'research' })
+      .update({ status: 'choice' })
       .eq('id', params.sessionId);
 
     return NextResponse.json(

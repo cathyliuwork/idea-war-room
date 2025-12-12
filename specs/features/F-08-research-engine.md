@@ -1,27 +1,34 @@
-# F-03: Research Engine
+# F-08: Research Engine
 
-**Version**: 1.0
-**Last Updated**: 2025-12-08
-**Priority**: CRITICAL
-**Status**: ✅ Spec Complete
+**Version**: 1.1
+**Last Updated**: 2025-12-11
+**Priority**: OPTIONAL
+**Status**: ✅ Spec Complete (moved from F-03, now optional)
 
 ---
 
 ## Quick Reference
 
-**What**: Execute research queries using AI Builders Search API, fetch competitor data, community signals (Reddit, forums), and regulatory context. Synthesize results into research snapshot for MVTA analysis.
+**What**: Execute research queries using AI Builders Search API, fetch competitor data, community signals (Reddit, forums), and regulatory context. Synthesize results into research snapshot.
 
-**Why**: Evidence-backed analysis requires real-world data. This feature fetches the facts that ground the red team simulation.
+**Why**: Evidence-backed analysis provides stronger validation of MVTA insights. However, MVTA can provide value even without research by stress-testing the founder's assumptions.
+
+**Status**: OPTIONAL - Users can choose to skip research and run MVTA directly with idea data only.
 
 **Dependencies**:
 - F-01: Database & Authentication (stores research snapshots)
 - F-02: Idea Intake Form (uses structured idea to generate queries)
+- F-03: Idea Analysis Choice Page (user navigation) - REQUIRED
 - S-03: Database Schema (research_snapshots table)
 - S-04: LLM Integration (Prompt B for query generation)
 - S-05: Search & Research Integration (AI Builders Search API)
 
 **Used By**:
-- F-04: MVTA Red Team Simulation (consumes research snapshot for evidence-based analysis)
+- F-04: MVTA Red Team Simulation (optionally consumes research snapshot)
+
+**Navigation**:
+- Entry: User clicks "Research Online" on Choice Page (F-03)
+- Exit: After completion, returns to Choice Page (F-03), not auto-navigates to MVTA
 
 **Implementation Status**:
 - [ ] PRD documented
@@ -39,6 +46,7 @@
 ### Required Features
 - [F-01: Database & Authentication](./F-01-database-auth.md) - Database writes
 - [F-02: Idea Intake Form](./F-02-idea-intake-form.md) - Structured idea input
+- [F-03: Idea Analysis Choice Page](./F-03-idea-analysis-choice-page.md) - User navigation
 
 ### Required System Modules
 - [S-03: Database Schema](../system/S-03-database-schema.md) - research_snapshots table
@@ -73,9 +81,9 @@ The Research Engine is the intelligence-gathering phase of MVTA analysis. After 
 
 ### User Flow
 
-**Step 1**: User completes intake form and reviews structured idea
-- User: Clicks "Proceed to Research" from review page
-- System: Navigates to `/analyze/[session_id]/research`, updates session status to 'research'
+**Step 1**: User completes intake form and navigates to Choice Page (F-03)
+- User: Clicks "Start Research" button from Choice Page
+- System: Navigates to `/analyze/[session_id]/research`, keeps session status as 'choice'
 
 **Step 2**: Query Generation Phase
 - User: Sees progress indicator: "Generating research queries..."
@@ -109,9 +117,9 @@ The Research Engine is the intelligence-gathering phase of MVTA analysis. After 
   - "Analyzed 12 community discussions"
   - "Identified 2 regulatory considerations"
 - System: Saves complete research snapshot to database
-- System: Updates session status to 'analysis'
-- User: Clicks "Proceed to Analysis" button
-- System: Navigates to `/analyze/[session_id]/analysis`
+- System: Sets research_completed flag to true (keeps status as 'choice')
+- User: Clicks "Back to Choice Page" button
+- System: Navigates to `/analyze/[session_id]/choice` (F-03)
 
 ---
 

@@ -11,18 +11,27 @@
 
 **What**: Core MVTA analysis using LLM (Prompt C) - simulates 5 red team personas attacking the idea across all threat vectors, scores vulnerabilities (1-5), identifies cascading failures, and generates actionable recommendations.
 
-**Why**: This is the core value proposition of Idea War Room. The red team simulation provides professional-grade adversarial analysis that founders can't get elsewhere.
+**Why**: This is the core value proposition of Idea War Room. The red team simulation provides professional-grade adversarial analysis regardless of whether online research was conducted.
+
+**Research Dependency**: OPTIONAL - MVTA can run with or without research data:
+- **With Research**: Uses competitor data, community signals, regulatory context as evidence
+- **Without Research**: Uses founder's competitive landscape description and stated assumptions
 
 **Dependencies**:
 - F-01: Database & Authentication (saves damage reports)
-- F-02: Idea Intake Form (structured idea input)
-- F-03: Research Engine (research snapshot for evidence)
+- F-02: Idea Intake Form (structured idea input) - REQUIRED
+- F-03: Idea Analysis Choice Page (user navigation) - REQUIRED
+- F-08: Research Engine (research snapshot for evidence) - OPTIONAL
 - S-03: Database Schema (damage_reports table)
 - S-04: LLM Integration (Prompt C for MVTA analysis)
 
 **Used By**:
 - F-05: Damage Report Display (renders MVTA results)
 - F-06: Interactive Q&A Session (uses report as context)
+
+**Navigation**:
+- Entry: User clicks "MVTA Analysis" on Choice Page (F-03)
+- Exit: After completion, navigates directly to Damage Report page (F-05). User can return to Choice Page via "Back to Idea Choice" button
 
 **Implementation Status**:
 - [ ] PRD documented
@@ -39,8 +48,9 @@
 
 ### Required Features
 - [F-01: Database & Authentication](./F-01-database-auth.md) - Database writes
-- [F-02: Idea Intake Form](./F-02-idea-intake-form.md) - Structured idea
-- [F-03: Research Engine](./F-03-research-engine.md) - Research snapshot
+- [F-02: Idea Intake Form](./F-02-idea-intake-form.md) - Structured idea (REQUIRED)
+- [F-03: Idea Analysis Choice Page](./F-03-idea-analysis-choice-page.md) - User navigation (REQUIRED)
+- [F-08: Research Engine](./F-08-research-engine.md) - Research snapshot (OPTIONAL)
 
 ### Required System Modules
 - [S-03: Database Schema](../system/S-03-database-schema.md) - damage_reports table
@@ -83,15 +93,17 @@ The MVTA Red Team Simulation is the analytical core of Idea War Room. It simulat
 
 ### User Flow
 
-**Step 1**: User completes research phase
-- User: Clicks "Proceed to MVTA Analysis" from research page
-- System: Navigates to `/analyze/[session_id]/analysis`, updates session status to 'analysis'
+**Step 1**: User selects MVTA Analysis from Choice Page
+- User: Clicks "Start MVTA Analysis" button from Choice Page (F-03)
+- System: Navigates to `/analyze/[session_id]/analysis`, keeps session status as 'choice'
 
 **Step 2**: Analysis Initiation
 - User: Sees loading screen: "Red Team is attacking your idea..."
-- System: Fetches structured idea and research snapshot from database
-- System: Calls LLM (Prompt C) with idea + research + MVTA instructions
+- System: Fetches structured idea from database
+- System: Optionally fetches research snapshot if available (not required)
+- System: Calls LLM (Prompt C) with idea + optional research + MVTA instructions
 - User: Sees progress indicator (estimated 2-3 minutes)
+- Note: Analysis proceeds successfully whether or not research was completed
 
 **Step 3**: Processing
 - System: LLM generates MVTA report (JSON format):
@@ -102,11 +114,11 @@ The MVTA Red Team Simulation is the analytical core of Idea War Room. It simulat
 - System: Validates JSON schema
 - System: Saves to damage_reports table
 
-**Step 4**: Report Ready
+**Step 4**: Analysis Complete
 - User: Sees "Analysis Complete!" message
-- System: Updates session status to 'completed'
-- System: Navigates to `/analyze/[session_id]/report`
-- User: Views damage report (F-05)
+- System: Updates session status to 'completed' and sets analysis_completed=true
+- System: Navigates back to `/analyze/[session_id]/choice` (Choice Page - F-03)
+- User: Can click "View Damage Report" button to navigate to `/analyze/[session_id]/report` (F-05)
 
 ---
 

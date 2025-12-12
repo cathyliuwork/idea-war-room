@@ -19,11 +19,12 @@
 
 **Used By**:
 - F-02: Idea Intake Form (requires authenticated user)
-- F-03: Research Engine (requires authenticated user)
+- F-03: Idea Analysis Choice Page (requires authenticated user)
 - F-04: MVTA Red Team Simulation (requires authenticated user)
 - F-06: Interactive Q&A Session (requires authenticated user)
-- F-08: Feedback Collection (requires authenticated user)
+- F-08: Research Engine (requires authenticated user)
 - F-09: Session History (requires authenticated user)
+- F-10: Feedback Collection (requires authenticated user)
 
 **Implementation Status**:
 - [ ] PRD documented

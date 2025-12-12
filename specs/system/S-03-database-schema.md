@@ -222,7 +222,9 @@ CREATE TRIGGER update_user_profiles_updated_at
 CREATE TABLE sessions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
-  status TEXT NOT NULL DEFAULT 'intake' CHECK (status IN ('intake', 'research', 'analysis', 'completed', 'failed')),
+  status TEXT NOT NULL DEFAULT 'intake' CHECK (status IN ('intake', 'choice', 'completed', 'failed')),
+  research_completed BOOLEAN DEFAULT FALSE,
+  analysis_completed BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -231,6 +233,7 @@ CREATE TABLE sessions (
 CREATE INDEX idx_sessions_user_id ON sessions(user_id);
 CREATE INDEX idx_sessions_status ON sessions(status);
 CREATE INDEX idx_sessions_created_at ON sessions(created_at DESC);
+CREATE INDEX idx_sessions_completion ON sessions(research_completed, analysis_completed);
 
 -- RLS Policies
 ALTER TABLE sessions ENABLE ROW LEVEL SECURITY;
@@ -258,16 +261,26 @@ CREATE TRIGGER update_sessions_updated_at
   EXECUTE FUNCTION update_updated_at_column();
 ```
 
-**Status Transitions**:
+**Status Transitions** (Branching Workflow):
 ```
-intake → research → analysis → completed
-         ↓            ↓           ↓
-         ↓            ↓           ↓
-         └────────────┴───────→ failed
+intake → choice ──┬→ (research) → research_completed=true → choice
+                  │
+                  └→ (analysis) → analysis_completed=true + status='completed'
 ```
 
+**Completion Flags**:
+- `research_completed`: TRUE if research has been run at least once
+- `analysis_completed`: TRUE if MVTA analysis has been run at least once
+- Both flags allow re-running (users can repeat either action)
+
 **Notes**:
-- Session lifecycle: created with status='intake', progresses through research/analysis, ends at completed/failed
+- Session starts with status='intake'
+- After intake form submission (F-02), status changes to 'choice'
+- User lands on Choice Page (F-03) where they can select:
+  - Research (F-08): Sets `research_completed=true`, keeps status='choice', returns to Choice Page
+  - MVTA (F-04): Sets `analysis_completed=true` AND changes status='completed'
+- Users can complete both features in any order
+- MVTA analysis is the primary output (triggers status='completed')
 - Each session represents one idea analysis (user can create multiple sessions)
 
 ---

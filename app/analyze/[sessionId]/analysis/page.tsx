@@ -50,15 +50,7 @@ export default function AnalysisPage() {
       const data = await res.json();
       setResults(data);
 
-      alert(
-        `MVTA Analysis Complete! 🎯\n\n` +
-          `Red Team found:\n` +
-          `- ${data.vulnerabilities_count} vulnerabilities across 5 vectors\n` +
-          `- ${data.cascading_failures_count} cascading failure chains\n\n` +
-          `Navigating to Damage Report...`
-      );
-
-      // Navigate to damage report page
+      // Navigate directly to report page
       router.push(`/analyze/${sessionId}/report`);
     } catch (err) {
       setError((err as Error).message);

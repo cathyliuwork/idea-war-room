@@ -56,11 +56,11 @@ export default function ResearchPage() {
           `✅ Found ${data.competitors_found} competitors\n` +
           `✅ Analyzed ${data.community_signals_found} community discussions\n` +
           `✅ Identified ${data.regulatory_signals_found} regulatory considerations\n\n` +
-          `Navigating to MVTA Red Team Analysis...`
+          `Returning to choice page...`
       );
 
-      // Navigate to analysis page
-      router.push(`/analyze/${sessionId}/analysis`);
+      // Navigate back to choice page
+      router.push(`/analyze/${sessionId}/choice`);
     } catch (err) {
       setError((err as Error).message);
     } finally {

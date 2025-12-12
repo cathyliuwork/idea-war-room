@@ -30,27 +30,29 @@ export async function POST(
       );
     }
 
-    // 2. Fetch research snapshot
-    const { data: research, error: researchError } = await supabase
+    // 2. Fetch research snapshot (OPTIONAL - may be null)
+    const { data: research } = await supabase
       .from('research_snapshots')
       .select('competitors, community_signals, regulatory_signals')
       .eq('session_id', params.sessionId)
-      .single();
+      .maybeSingle();
 
-    if (researchError || !research) {
-      return NextResponse.json(
-        { error: 'Research not found. Please complete research phase first.' },
-        { status: 404 }
-      );
-    }
+    // Create research context (empty arrays if research not available)
+    const researchContext = research
+      ? {
+          competitors: research.competitors || [],
+          community_signals: research.community_signals || [],
+          regulatory_signals: research.regulatory_signals || [],
+        }
+      : {
+          competitors: [],
+          community_signals: [],
+          regulatory_signals: [],
+        };
 
-    // 3. Run MVTA analysis
+    // 3. Run MVTA analysis (works with or without research)
     console.log(`Starting MVTA analysis for session ${params.sessionId}...`);
-    const mvtaReport = await runMVTAAnalysis(idea.structured_idea, {
-      competitors: research.competitors || [],
-      community_signals: research.community_signals || [],
-      regulatory_signals: research.regulatory_signals || [],
-    });
+    const mvtaReport = await runMVTAAnalysis(idea.structured_idea, researchContext);
 
     // 4. Save damage report to database
     const { data: damageReport, error: reportError } = await supabase
@@ -69,10 +71,13 @@ export async function POST(
       throw new Error(`Failed to save damage report: ${reportError.message}`);
     }
 
-    // 5. Update session status to 'completed'
+    // 5. Update session status to 'completed' and set analysis_completed flag
     await supabase
       .from('sessions')
-      .update({ status: 'completed' })
+      .update({
+        status: 'completed',
+        analysis_completed: true,
+      })
       .eq('id', params.sessionId);
 
     console.log(`MVTA analysis complete for session ${params.sessionId}`);

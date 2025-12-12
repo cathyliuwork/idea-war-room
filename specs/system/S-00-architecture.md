@@ -444,13 +444,14 @@ NEXT_PUBLIC_APP_URL=https://ideawarroom.com
 ### Features
 - [F-01: External Authentication Integration](../features/F-01-database-auth.md)
 - [F-02: Idea Intake Form](../features/F-02-idea-intake-form.md)
-- [F-03: Research Engine](../features/F-03-research-engine.md)
+- [F-03: Idea Analysis Choice Page](../features/F-03-idea-analysis-choice-page.md)
 - [F-04: MVTA Red Team Simulation](../features/F-04-mvta-red-team-simulation.md)
 - [F-05: Damage Report Display](../features/F-05-damage-report-display.md)
 - [F-06: Interactive Q&A Session](../features/F-06-interactive-qa-session.md)
 - [F-07: Export & Sharing](../features/F-07-export-sharing.md)
-- [F-08: Feedback Collection](../features/F-08-feedback-collection.md)
+- [F-08: Research Engine](../features/F-08-research-engine.md)
 - [F-09: Session History](../features/F-09-session-history.md)
+- [F-10: Feedback Collection](../features/F-10-feedback-collection.md)
 
 ---
 

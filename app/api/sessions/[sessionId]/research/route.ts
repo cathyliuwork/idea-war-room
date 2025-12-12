@@ -53,10 +53,10 @@ export async function POST(
       throw new Error(`Failed to save research: ${snapshotError.message}`);
     }
 
-    // 4. Update session status to 'analysis'
+    // 4. Set research_completed flag (keep status as 'choice')
     await supabase
       .from('sessions')
-      .update({ status: 'analysis' })
+      .update({ research_completed: true })
       .eq('id', params.sessionId);
 
     console.log(`Research complete for session ${params.sessionId}`);

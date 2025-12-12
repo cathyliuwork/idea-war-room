@@ -19,7 +19,7 @@
 **Used By**:
 - F-06: Interactive Q&A Session (context for follow-up questions)
 - F-07: Export & Sharing (content to export)
-- F-08: Feedback Collection (users provide feedback on this display)
+- F-10: Feedback Collection (users provide feedback on this display)
 
 **Implementation Status**:
 - [ ] PRD documented
@@ -39,6 +39,23 @@
 
 ### Required System Modules
 - [S-03: Database Schema](../system/S-03-database-schema.md) - damage_reports table
+
+---
+
+## Navigation
+
+**Entry Points**:
+- From F-04 MVTA Analysis (after analysis completes, navigates directly to report)
+- From F-03 Idea Analysis Choice Page (when user clicks MVTA button after analysis is completed)
+
+**Exit Points**:
+- To F-03 Idea Analysis Choice Page (via "Back to Idea Choice" button)
+
+**User Flow**:
+1. User completes MVTA analysis on F-04
+2. System automatically navigates to this page (no alert popup)
+3. User views damage report with vulnerabilities, cascading failures, and recommendations
+4. User clicks "Back to Idea Choice" to return to F-03 (and from there can access Dashboard)
 
 ---
 

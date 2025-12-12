@@ -222,12 +222,12 @@ export default function ReportPage() {
         </div>
 
         {/* Navigation */}
-        <div className="mt-8 flex gap-4">
+        <div className="mt-8">
           <button
-            onClick={() => router.push('/dashboard')}
-            className="px-6 py-3 border border-border-medium text-text-primary rounded-lg hover:border-border-dark transition-colors"
+            onClick={() => router.push(`/analyze/${sessionId}/choice`)}
+            className="px-6 py-3 bg-brand-primary text-white rounded-lg hover:bg-brand-hover transition-colors"
           >
-            Back to Dashboard
+            Back to Idea Choice
           </button>
         </div>
       </div>

@@ -90,13 +90,14 @@ specs/
 ├── features/                           # Feature specifications
 │   ├── F-01-database-auth.md           # Database & Authentication
 │   ├── F-02-idea-intake-form.md        # Idea Intake Form
-│   ├── F-03-research-engine.md         # Research Engine
+│   ├── F-03-idea-analysis-choice-page.md # Idea Analysis Choice Page (NEW)
 │   ├── F-04-mvta-red-team-simulation.md # MVTA Red Team Simulation
 │   ├── F-05-damage-report-display.md   # Damage Report Display
 │   ├── F-06-interactive-qa-session.md  # Interactive Q&A Session
 │   ├── F-07-export-sharing.md          # Export & Sharing
-│   ├── F-08-feedback-collection.md     # Feedback Collection
-│   └── F-09-session-history.md         # Session History
+│   ├── F-08-research-engine.md         # Research Engine (moved from F-03)
+│   ├── F-09-session-history.md         # Session History
+│   └── F-10-feedback-collection.md     # Feedback Collection (moved from F-08)
 │
 └── original/                           # Original project requirements
     └── idea.md
@@ -106,19 +107,20 @@ specs/
 
 ## Feature Index
 
-### Complete Feature Catalog (9 Features)
+### Complete Feature Catalog (10 Features)
 
 | Feature ID | Feature Name | Priority | Dependencies | Status |
 |------------|-------------|----------|--------------|---------|
 | **F-01** | [Database & Authentication](./features/F-01-database-auth.md) | CRITICAL | None | ✅ Spec Complete |
-| **F-02** | [Idea Intake Form](./features/F-02-idea-intake-form.md) | CRITICAL | F-01, S-03, S-04 | ✅ Spec Complete |
-| **F-03** | [Research Engine](./features/F-03-research-engine.md) | CRITICAL | F-01, S-05 | ✅ Spec Complete |
+| **F-02** | [Idea Intake Form](./features/F-02-idea-intake-form.md) | CRITICAL | F-01, S-03 | ✅ Spec Complete |
+| **F-03** | [Idea Analysis Choice Page](./features/F-03-idea-analysis-choice-page.md) | CRITICAL | F-01, F-02, S-03 | ✅ Spec Complete |
 | **F-04** | [MVTA Red Team Simulation](./features/F-04-mvta-red-team-simulation.md) | CRITICAL | F-01, F-02, F-03, S-04 | ✅ Spec Complete |
 | **F-05** | [Damage Report Display](./features/F-05-damage-report-display.md) | CRITICAL | F-04 | ✅ Spec Complete |
 | **F-06** | [Interactive Q&A Session](./features/F-06-interactive-qa-session.md) | HIGH | F-04, F-05, S-04 | ✅ Spec Complete |
 | **F-07** | [Export & Sharing](./features/F-07-export-sharing.md) | HIGH | F-05 | ✅ Spec Complete |
-| **F-08** | [Feedback Collection](./features/F-08-feedback-collection.md) | MEDIUM | F-05 | ✅ Spec Complete |
+| **F-08** | [Research Engine](./features/F-08-research-engine.md) | OPTIONAL | F-01, F-02, F-03, S-04, S-05 | ✅ Spec Complete |
 | **F-09** | [Session History](./features/F-09-session-history.md) | MEDIUM | F-01, F-02, F-04, F-05 | ✅ Spec Complete |
+| **F-10** | [Feedback Collection](./features/F-10-feedback-collection.md) | MEDIUM | F-05 | ✅ Spec Complete |
 
 ---
 
@@ -131,10 +133,11 @@ graph TD
 
     %% Wave 2
     F02[F-02: Idea Intake Form]
-    F03[F-03: Research Engine]
+    F03[F-03: Choice Page]
 
     %% Wave 3
-    F04[F-04: MVTA Red Team Simulation]
+    F04[F-04: MVTA Analysis]
+    F08[F-08: Research Engine]
 
     %% Wave 4
     F05[F-05: Damage Report Display]
@@ -143,19 +146,22 @@ graph TD
     %% Wave 5
     F06[F-06: Interactive Q&A]
     F07[F-07: Export & Sharing]
-    F08[F-08: Feedback Collection]
+    F10[F-10: Feedback Collection]
 
     %% Dependencies
     F01 --> F02
+    F02 --> F03
     F01 --> F03
-    F02 --> F04
     F03 --> F04
+    F03 --> F08
     F01 --> F04
+    F02 --> F04
+    F08 -.optional.-> F04
     F04 --> F05
     F05 --> F06
     F04 --> F06
     F05 --> F07
-    F05 --> F08
+    F05 --> F10
     F01 --> F09
     F02 --> F09
     F04 --> F09
@@ -165,10 +171,12 @@ graph TD
     classDef critical fill:#ff6b6b,stroke:#c92a2a,stroke-width:2px,color:#fff
     classDef high fill:#4dabf7,stroke:#1971c2,stroke-width:2px,color:#fff
     classDef medium fill:#69db7c,stroke:#2f9e44,stroke-width:2px,color:#fff
+    classDef optional fill:#ffd43b,stroke:#fab005,stroke-width:2px,color:#000
 
     class F01,F02,F03,F04,F05 critical
     class F06,F07 high
-    class F08,F09 medium
+    class F08 optional
+    class F09,F10 medium
 ```
 
 ### Implementation Waves
@@ -190,14 +198,15 @@ graph TD
 **Wave 5** (Depends on Wave 1-4):
 - F-06: Interactive Q&A Session (F-04, F-05)
 - F-07: Export & Sharing (F-05)
-- F-08: Feedback Collection (F-05)
+- F-08: Research Engine (F-01, F-02, F-03) - OPTIONAL
+- F-10: Feedback Collection (F-05)
 
 ### Critical Path
 
 ```
-F-01 → F-02 → F-04 → F-05
-       ↓       ↑
-     F-03 ─────┘
+F-01 → F-02 → F-03 (Choice) → F-04 (MVTA) → F-05
+                    ↓
+                  F-08 (Research) - optional
 ```
 
 These features MUST be implemented sequentially. Other features can be developed in parallel once their dependencies are met.
@@ -355,13 +364,14 @@ When adding new features post-MVP, copy the structure from any F-XX file or the 
 ### All Features
 - [F-01: Database & Authentication](./features/F-01-database-auth.md)
 - [F-02: Idea Intake Form](./features/F-02-idea-intake-form.md)
-- [F-03: Research Engine](./features/F-03-research-engine.md)
+- [F-03: Idea Analysis Choice Page](./features/F-03-idea-analysis-choice-page.md)
 - [F-04: MVTA Red Team Simulation](./features/F-04-mvta-red-team-simulation.md)
 - [F-05: Damage Report Display](./features/F-05-damage-report-display.md)
 - [F-06: Interactive Q&A Session](./features/F-06-interactive-qa-session.md)
 - [F-07: Export & Sharing](./features/F-07-export-sharing.md)
-- [F-08: Feedback Collection](./features/F-08-feedback-collection.md)
+- [F-08: Research Engine](./features/F-08-research-engine.md)
 - [F-09: Session History](./features/F-09-session-history.md)
+- [F-10: Feedback Collection](./features/F-10-feedback-collection.md)
 
 ---
 
@@ -505,7 +515,13 @@ All prompt templates are defined in [S-04: LLM Integration](./system/S-04-llm-in
   - [ ] Clipboard API
   - [ ] Tests passing
 
-- [ ] F-08: Feedback Collection
+- [ ] F-08: Research Engine (OPTIONAL)
+  - [ ] Query generation (Prompt B)
+  - [ ] Search API integration
+  - [ ] Result synthesis
+  - [ ] Tests passing
+
+- [ ] F-10: Feedback Collection
   - [ ] Feedback form modal
   - [ ] Database save
   - [ ] Tests passing

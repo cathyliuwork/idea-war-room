@@ -668,7 +668,7 @@ See [S-02: Testing Strategy](./S-02-testing-strategy.md) for full details.
 - Penalize generic platitudes ("this could be a problem" → "Based on X evidence, Y vulnerability exists")
 
 **Iterative Refinement**:
-- Use feedback data (F-08) to identify prompt weaknesses
+- Use feedback data (F-10) to identify prompt weaknesses
 - A/B test prompt variations (post-MVP)
 - Monitor validation failure rate (if >5%, prompts need tuning)
 
