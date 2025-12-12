@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAuthenticatedSupabaseClient } from '@/lib/auth/middleware';
-import { structureIdea } from '@/lib/llm/prompts/structure-idea';
+import { StructuredIdeaSchema } from '@/lib/validation/schemas';
+import { z } from 'zod';
 
 /**
- * Submit Idea for Structuring
+ * Submit Idea (Form-based)
  *
- * Receives raw idea input from intake form, uses LLM to structure it
- * into MVTA format, and saves to database.
+ * Receives structured idea directly from form (no LLM extraction).
+ * Validates with Zod schema and saves to database.
  *
  * POST /api/sessions/[sessionId]/idea
  */
@@ -15,14 +16,18 @@ export async function POST(
   { params }: { params: { sessionId: string } }
 ) {
   try {
-    const { rawInput } = await request.json();
+    const body = await request.json();
+    const { structured_idea, source = 'form' } = body;
 
-    if (!rawInput || typeof rawInput !== 'string') {
+    if (!structured_idea) {
       return NextResponse.json(
-        { error: 'rawInput is required and must be a string' },
+        { error: 'structured_idea is required', code: 'VALIDATION_FAILED' },
         { status: 400 }
       );
     }
+
+    // Validate with Zod schema (no LLM call)
+    const validatedIdea = StructuredIdeaSchema.parse(structured_idea);
 
     const { supabase } = await createAuthenticatedSupabaseClient();
 
@@ -35,21 +40,19 @@ export async function POST(
 
     if (sessionError || !session) {
       return NextResponse.json(
-        { error: 'Session not found or access denied' },
+        { error: 'Session not found or access denied', code: 'SESSION_NOT_FOUND' },
         { status: 404 }
       );
     }
-
-    // Structure idea using LLM (Prompt A)
-    const structuredIdea = await structureIdea(rawInput);
 
     // Save idea to database
     const { data, error } = await supabase
       .from('ideas')
       .insert({
         session_id: params.sessionId,
-        raw_input: rawInput,
-        structured_idea: structuredIdea,
+        raw_input: JSON.stringify(structured_idea), // Store form JSON string
+        structured_idea: validatedIdea,
+        source: source, // 'form' or 'ai'
       })
       .select('id')
       .single();
@@ -67,15 +70,29 @@ export async function POST(
     return NextResponse.json(
       {
         idea_id: data.id,
-        structured_idea: structuredIdea,
+        structured_idea: validatedIdea,
       },
       { status: 201 }
     );
   } catch (error) {
     console.error('Submit idea failed:', error);
 
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          error: 'Validation failed',
+          code: 'VALIDATION_FAILED',
+          details: error.errors,
+        },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json(
-      { error: (error as Error).message },
+      {
+        error: (error as Error).message,
+        code: 'DATABASE_ERROR',
+      },
       { status: 500 }
     );
   }

@@ -1,29 +1,47 @@
 # F-02: Idea Intake Form
 
-**Version**: 1.0
-**Last Updated**: 2025-12-08
+**Version**: 2.0
+**Last Updated**: 2025-12-11
 **Priority**: CRITICAL
-**Status**: ✅ Spec Complete
+**Status**: 📝 Spec In Progress
+
+---
+
+## Change History
+- **v2.0 (2025-12-11)**: Changed from AI extraction to direct form input (3-step wizard)
+- **v1.0 (2025-12-08)**: Initial version (AI extraction mode, archived at `specs/archive/old/F-02-idea-intake-form-ai-extraction.md`)
 
 ---
 
 ## Quick Reference
 
-**What**: Conversational multi-step form for capturing founder's raw idea and converting it into MVTA-structured format using LLM (Prompt A).
+**What**: 3-step wizard form where users directly fill structured fields to generate MVTA-formatted data (no AI extraction needed)
 
-**Why**: The intake form is the entry point for all MVTA analyses. It must be simple, non-intimidating, and produce high-quality structured data for downstream analysis.
+**Why**:
+- Increase efficiency: Direct input is faster than AI extraction (no 30+ second LLM wait)
+- Increase accuracy: Users directly control each field content, avoiding AI misinterpretation
+- Reduce cost: Remove LLM dependency (save ~$0.02 per submission)
+- Simplify flow: Fewer processing steps, smoother user experience
+
+**Key Changes** (vs v1.0):
+- ❌ Removed: AI extraction flow (Prompt A call)
+- ❌ Removed: 7 free-text questions
+- ✅ Added: 3-step structured form
+- ✅ Added: Dynamic array input component (for assumptions, assets fields)
+- ✅ Added: Auto-save to localStorage (2-second debounce)
+- ✅ Added: Field-level real-time validation
+- ✅ Added: Character counter
 
 **Dependencies**:
-- F-01: External Authentication Integration (authenticates user, provides user context)
-- S-03: Database Schema (ideas table, sessions table)
-- S-04: LLM Integration (Prompt A for idea structuring)
+- F-01: External Authentication Integration (authenticates user)
+- S-03: Database Schema (ideas table, sessions table) **Needs source field added**
 
 **Used By**:
 - F-03: Research Engine (uses structured idea to generate queries)
 - F-04: MVTA Red Team Simulation (analyzes structured idea)
 
 **Implementation Status**:
-- [ ] PRD documented
+- [x] PRD documented
 - [ ] Technical design complete
 - [ ] Tests defined
 - [ ] Implementation started
@@ -33,170 +51,345 @@
 
 ---
 
-## Dependencies
-
-### Required Features
-- [F-01: External Authentication Integration](./F-01-database-auth.md) - JWT-based user authentication
-
-### Required System Modules
-- [S-03: Database Schema](../system/S-03-database-schema.md) - `sessions` and `ideas` tables
-- [S-04: LLM Integration](../system/S-04-llm-integration.md) - Prompt A for structuring raw input
-
-### External Services
-- AI Builders API - LLM for idea structuring
-
----
-
 ## PRD: Product Requirements
 
 ### Overview
 
-The Idea Intake Form is the first step in the MVTA analysis workflow. Founders describe their startup idea in free-form text, answering 5-7 key questions. The system uses LLM (Prompt A) to convert these raw answers into a structured MVTA JSON format that downstream features can process.
+3-step wizard form where users directly fill MVTA framework fields. Replaces the previous "free-text → AI extraction" model with full user control over data entry.
 
-**Key Design Goals**:
-1. **Low friction**: No jargon, no complex fields, just conversational questions
-2. **Progressive disclosure**: Show one question at a time (wizard-style)
-3. **Flexibility**: Allow founders to write as much or as little as they want
-4. **Transparency**: Show AI processing step ("Structuring your idea...")
-5. **Review step**: Let founders review structured output before proceeding
+**3-Step Wizard Design**:
 
-**Target Completion Time**: 5-10 minutes
+1. **Step 1: Core Concept** (Required)
+   - high_concept (single-line, 150 chars)
+   - value_proposition (multi-line, 300 chars)
+   - success_metric_18m (single-line, 150 chars)
+
+2. **Step 2: Environment & Context** (Partially Required)
+   - user_persona (required, multi-line, 300 chars)
+   - competitive_landscape (required, multi-line, 400 chars)
+   - regulatory_context (optional, multi-line, 400 chars)
+
+3. **Step 3: Assumptions & Assets** (Optional)
+   - assumptions: market / technical / business_model (dynamic arrays)
+   - assets: key_assets / brand_narrative (dynamic arrays)
+
+**Target Completion Time**: 8-12 minutes
+
+**Key Design Principles**:
+- **Progressive disclosure**: Show only relevant fields per step, avoid information overload
+- **Clear required/optional indicators**: Users know exactly what must be filled
+- **Real-time feedback**: Character counters, validation errors display immediately
+- **Data persistence**: Auto-save prevents data loss
+- **Mobile-friendly**: Responsive design for phones and tablets
 
 ---
 
 ### User Flow
 
-**Step 1**: User lands on dashboard, clicks "Analyze New Idea"
-- User: Clicks "Analyze New Idea" button on dashboard
-- System: Creates new session (status='intake'), navigates to `/analyze/[session_id]/intake`
+**Main Flow**:
 
-**Step 2**: Introduction screen
-- User: Sees welcome message explaining the process
-- System: Displays:
-  - "Let's validate your idea with MVTA"
-  - "Answer 5-7 questions about your startup (takes 5-10 minutes)"
-  - "We'll structure your answers and run a red team analysis"
-  - "Start" button
+1. **Start Analysis Session**
+   - User: Clicks "Analyze New Idea" on dashboard
+   - System: Creates new session (status='intake'), navigates to `/analyze/[sessionId]/intake`
 
-**Step 3**: Question 1 - High-Level Concept
-- User: Sees question: "What's your idea? (Describe it in 1-2 sentences)"
-- System: Shows textarea, "Next" button
-- User: Enters answer, clicks "Next"
-- System: Saves answer to local state, advances to Q2
+2. **Step 1: Fill Core Concept**
+   - User: Sees Step 1 form (Progress: 33%)
+   - User: Fills high_concept (required, single-line, 150 char limit)
+   - User: Fills value_proposition (required, multi-line, 300 char limit)
+   - User: Fills success_metric_18m (required, single-line, 150 char limit)
+   - System: Displays real-time character counter (e.g., "45 / 150")
+   - System: Auto-saves to localStorage after 2 seconds
+   - User: Clicks "Next"
+   - System: Validates required fields, proceeds to Step 2 if valid
 
-**Step 4**: Question 2 - Problem & Value Proposition
-- User: Sees question: "What problem does this solve, and for whom?"
-- System: Shows textarea, "Back" and "Next" buttons
-- User: Enters answer, clicks "Next"
+3. **Step 2: Fill Environment & Context**
+   - User: Sees Step 2 form (Progress: 67%)
+   - User: Fills user_persona (required, multi-line, 300 chars)
+   - User: Fills competitive_landscape (required, multi-line, 400 chars)
+   - User: Fills regulatory_context (optional, multi-line, 400 chars)
+   - User: Clicks "Next"
+   - System: Validates required fields, proceeds to Step 3 if valid
 
-**Step 5**: Question 3 - Success Metric
-- User: Sees question: "What does success look like in 18 months? (Be specific)"
-- User: Enters answer, clicks "Next"
+4. **Step 3: Fill Assumptions & Assets**
+   - User: Sees Step 3 form (Progress: 100%)
+   - User: **Assumptions** (optional):
+     - Clicks "+ Add Market Assumption" → new input field appears
+     - Fills market assumption (200 char limit per item)
+     - Clicks "X" to remove an assumption
+     - Same for: technical assumptions, business model assumptions
+   - User: **Assets** (optional):
+     - Clicks "+ Add Key Asset" → new input field appears
+     - Fills key asset (150 char limit per item)
+     - Same for: brand narrative
+   - System: All fields optional, user can skip entire step
+   - User: Clicks "Submit & Continue"
+   - System: Validates entire form
+   - System: Calls `POST /api/sessions/[sessionId]/idea` (no LLM call)
+   - System: Saves to database (source='form')
+   - System: Updates session status='research'
+   - System: Navigates to `/analyze/[sessionId]/research`
 
-**Step 6**: Question 4 - Assumptions
-- User: Sees question: "What are you assuming about the market, technology, or business model?"
-- User: Enters answer (can leave blank), clicks "Next"
+**Error Handling**:
+- **Validation failure**: Display red error text below field, red border on field
+- **API failure**: Display toast notification at top, allow retry
+- **Network disconnection**: Data already saved in localStorage, restore on reload
 
-**Step 7**: Question 5 - Assets & Advantages
-- User: Sees question: "What unique advantages do you have? (Skills, connections, distribution, IP, etc.)"
-- User: Enters answer (can leave blank), clicks "Next"
-
-**Step 8**: Question 6 - Target Users & Market
-- User: Sees question: "Who are your target users, and who are the main competitors?"
-- User: Enters answer, clicks "Next"
-
-**Step 9**: Question 7 - Regulatory Context (Optional)
-- User: Sees question: "Are there any legal or regulatory considerations? (Leave blank if not applicable)"
-- User: Enters answer or skips, clicks "Submit"
-
-**Step 10**: Processing
-- User: Sees loading spinner with message "Structuring your idea using MVTA framework..."
-- System: Calls LLM (Prompt A) to convert raw answers into structured JSON
-- System: Saves structured idea to database (ideas table)
-
-**Step 11**: Review Structured Output
-- User: Sees structured idea displayed in cards:
-  - High Concept
-  - Value Proposition
-  - Success Metric (18 months)
-  - Market Assumptions
-  - Technical Assumptions
-  - Business Model Assumptions
-  - Key Assets
-  - Brand Narrative
-  - Target User Persona
-  - Competitive Landscape
-  - Regulatory Context
-- System: Shows "Looks good? Proceed to Research" button and "Edit" button
-- User: Reviews, clicks "Proceed to Research"
-- System: Updates session status to 'research', navigates to `/analyze/[session_id]/research`
+**Edge Cases**:
+- **Exit mid-flow**: localStorage draft preserved, restore on return
+- **Go back**: All filled data retained
+- **Duplicate submission**: Backend checks if session already has idea, prevent duplicate creation
 
 ---
 
 ### UI Components
 
-**Component 1: IntakeWizard**
-- **Location**: `/analyze/[session_id]/intake` route
-- **Purpose**: Multi-step form wrapper
-- **Elements**:
-  - Progress indicator (Step X of 7)
-  - Current question display
-  - Textarea input
-  - Navigation buttons ("Back", "Next", "Submit")
-  - Auto-save indicator
+#### Component 1: IntakeWizard (Main Container)
 
-**Component 2: QuestionCard**
-- **Location**: Inside IntakeWizard
-- **Purpose**: Display one question at a time
-- **Elements**:
-  - Question title (large, clear)
-  - Helper text (optional, smaller font)
-  - Textarea (auto-expanding, min 3 rows, max 10 rows)
-  - Character counter (optional)
+**Location**: `/analyze/[sessionId]/intake`
 
-**Component 3: StructuredIdeaReview**
-- **Location**: `/analyze/[session_id]/intake/review` route
-- **Purpose**: Show structured MVTA output for founder review
-- **Elements**:
-  - Card grid (2 columns on desktop, 1 on mobile)
-  - Each card shows one MVTA field
-  - "Edit Answers" button (returns to Step 1 with saved answers)
-  - "Proceed to Research" button
+**Purpose**: Manage 3-step wizard state machine, coordinate step components
 
-**Component 4: ProcessingSpinner**
-- **Location**: Between form submission and review
-- **Purpose**: Transparency during LLM processing
-- **Elements**:
-  - Animated spinner
-  - Status message ("Structuring your idea...")
-  - Estimated time ("This takes ~30 seconds")
+**State**:
+```typescript
+const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
+const [formData, setFormData] = useState<Partial<StructuredIdea>>({});
+const [isSubmitting, setIsSubmitting] = useState(false);
+```
+
+**Features**:
+- react-hook-form integration
+- Zod validation
+- localStorage auto-save (2-second debounce)
+- Step navigation
+- Progress indicator
+
+---
+
+#### Component 2: ArrayFieldInput (Dynamic Array Input)
+
+**Purpose**: Reusable component for assumptions, assets array fields
+
+**Props**:
+```typescript
+interface ArrayFieldInputProps {
+  label: string;              // "Market Assumptions"
+  helperText?: string;        // "What are your key assumptions about..."
+  maxLength: number;          // Max chars per item (e.g., 200)
+  placeholder: string;        // "e.g., Solo founders spend..."
+  values: string[];           // Current value array
+  onChange: (values: string[]) => void;
+}
+```
+
+**UI Pattern**:
+```
+┌─────────────────────────────────────────────────────────┐
+│ Market Assumptions                                       │
+│ What are your key assumptions about the market?          │
+│ ───────────────────────────────────────────────────────  │
+│                                                          │
+│ [Solo founders willing to pay $20/mo for validation  ] [X] 178/200 │
+│ [No existing tools focus on MVTA methodology        ] [X] 45/200  │
+│ [+ Add Another Market Assumption]                        │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Features**:
+- Dynamic add/remove input fields
+- Independent character counter per item
+- "X" button to delete (minimum 0 items)
+- "+ Add" button
+
+---
+
+#### Component 3: Step1CoreConcept
+
+**Fields**:
+1. **High Concept** (single-line input)
+   - Label: "Describe your idea in one sentence"
+   - Placeholder: "A platform that helps solo founders validate startup ideas through AI-powered adversarial analysis"
+   - Max: 150 chars
+   - Required: true
+
+2. **Value Proposition** (textarea)
+   - Label: "What problem does this solve, and for whom?"
+   - Placeholder: "Founders spend weeks gathering feedback, only to realize critical flaws too late. We help solo founders and early-stage entrepreneurs identify risks before investing time and money."
+   - Max: 300 chars
+   - Rows: 4
+   - Required: true
+
+3. **Success Metric (18m)** (single-line input)
+   - Label: "What does success look like in 18 months? (Be specific and measurable)"
+   - Placeholder: "10,000 validated ideas with 70% accuracy on risk prediction"
+   - Max: 150 chars
+   - Required: true
+
+---
+
+#### Component 4: Step2Environment
+
+**Fields**:
+
+1. **User Persona** (textarea)
+   - Label: "Target User Persona"
+   - Placeholder: "Solo founders and early-stage entrepreneurs (25-45 years old) who are technical enough to understand product development but lack market validation experience"
+   - Max: 300 chars
+   - Rows: 4
+   - Required: true
+
+2. **Competitive Landscape** (textarea)
+   - Label: "Competitive Landscape"
+   - Placeholder: "Similar tools: ProductHunt validation, BetaList feedback, Reddit communities. None combine automated research with adversarial analysis."
+   - Max: 400 chars
+   - Rows: 5
+   - Required: true
+
+3. **Regulatory Context** (textarea)
+   - Label: "Regulatory Context (Leave blank if not applicable)"
+   - Placeholder: "Describe relevant regulations (GDPR, financial services, healthcare, etc.) if applicable"
+   - Max: 400 chars
+   - Rows: 4
+   - Required: false
+
+---
+
+#### Component 5: Step3AssumptionsAssets
+
+**Section A: Assumptions** (All Optional)
+
+1. **Market Assumptions** (ArrayFieldInput)
+   - Label: "Market Assumptions"
+   - Helper: "What are your key assumptions about the target market?"
+   - Max per item: 200 chars
+   - Placeholder: "e.g., Solo founders spend 2 hours/day gathering feedback"
+
+2. **Technical Assumptions** (ArrayFieldInput)
+   - Label: "Technical Assumptions"
+   - Helper: "What technical capabilities or feasibility are you assuming?"
+   - Max per item: 200 chars
+
+3. **Business Model Assumptions** (ArrayFieldInput)
+   - Label: "Business Model Assumptions"
+   - Helper: "Assumptions about pricing, distribution, or revenue?"
+   - Max per item: 200 chars
+
+**Section B: Assets** (All Optional)
+
+4. **Key Assets** (ArrayFieldInput)
+   - Label: "Key Assets & Resources"
+   - Helper: "What unique advantages do you have? (Skills, IP, distribution channels, partnerships)"
+   - Max per item: 150 chars
+
+5. **Brand Narrative** (ArrayFieldInput)
+   - Label: "Brand Narrative Strengths"
+   - Helper: "What compelling stories or brand elements do you have?"
+   - Max per item: 150 chars
+
+---
+
+#### Component 6: ProgressIndicator
+
+**Purpose**: Display current step progress
+
+**UI**:
+```
+┌───────────────────────────────────────────┐
+│ Step 1 of 3                               │
+│ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
+│ █████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░  33% │
+│                                           │
+│ ● Core Concept  ○ Environment  ○ Assumptions & Assets │
+└───────────────────────────────────────────┘
+```
+
+**Features**:
+- Step number (1 of 3, 2 of 3, 3 of 3)
+- Progress bar (33%, 67%, 100%)
+- Step name indicators (● current step, ○ other steps)
+
+---
+
+#### Component 7: FormNavigation
+
+**Purpose**: Navigation buttons (Back, Next, Submit)
+
+**Props**:
+```typescript
+interface FormNavigationProps {
+  currentStep: 1 | 2 | 3;
+  onBack: () => void;
+  onNext: () => void;
+  onSubmit: () => void;
+  isSubmitting: boolean;
+  canProceed: boolean;  // Current step validation passed
+}
+```
+
+**UI**:
+```
+┌─────────────────────────────────────────┐
+│  [← Back]              [Next →]         │  // Step 1, 2
+│  [← Back]         [Submit & Continue →] │  // Step 3
+└─────────────────────────────────────────┘
+```
+
+**Button States**:
+- "Back": Disabled on Step 1
+- "Next": Disabled when required fields not filled
+- "Submit & Continue": Shows spinner + "Submitting..." during submission
 
 ---
 
 ### Business Rules
 
-1. **Session Creation**: A new session is created when user clicks "Analyze New Idea" (status='intake')
-2. **Auto-save**: Answers are saved to session state every 5 seconds (local storage fallback)
-3. **Navigation**: Users can go back to previous questions and edit answers
-4. **Required Fields**: Questions 1, 2, 3, and 6 are required; others are optional
-5. **LLM Processing**: Prompt A converts raw answers into structured JSON (see S-04)
-6. **Validation**: Structured output must match MVTA schema (Zod validation)
-7. **Retry Logic**: If LLM fails, show error and retry button (max 3 retries)
+1. **Required Field Checks**:
+   - Step 1: high_concept, value_proposition, success_metric_18m
+   - Step 2: user_persona, competitive_landscape
+   - Step 3: All fields optional
+
+2. **Character Limits Strictly Enforced**:
+   - Input disabled when limit reached
+   - Character counter color changes:
+     - < 80%: Gray
+     - 80%-100%: Orange
+     - 100%: Red
+
+3. **Auto-save**:
+   - Triggers 2 seconds after form data changes
+   - Saves to `localStorage` key: `idea-intake-draft-${sessionId}`
+   - Auto-restore on page load (if exists)
+
+4. **Step Validation**:
+   - Validate current step when clicking "Next"
+   - Show errors and prevent advance if required fields empty
+   - Can go back to previous step to modify
+
+5. **Data Submission**:
+   - Validate entire form on submit (Zod validation)
+   - Clear localStorage draft on success
+   - Keep draft on failure, show error
+
+6. **source Field**:
+   - All ideas submitted via form marked as `source='form'`
+   - Distinguishes from legacy AI extraction `source='ai'`
 
 ---
 
 ### Acceptance Criteria
 
 - [ ] User can start new analysis session from dashboard
-- [ ] Form shows one question at a time (wizard style)
-- [ ] User can navigate back to previous questions
-- [ ] User can submit form after answering required questions
-- [ ] System calls LLM (Prompt A) to structure raw answers
-- [ ] Structured idea is saved to database (ideas table)
-- [ ] User sees review screen with structured output
-- [ ] User can proceed to research phase after reviewing
-- [ ] Error handling: Show clear message if LLM fails, allow retry
-- [ ] Auto-save: Answers persist if user refreshes page
+- [ ] 3-step wizard displays correctly, progress indicator accurate
+- [ ] All required field validation works
+- [ ] Character counters update in real-time
+- [ ] Dynamic array inputs can add/remove items
+- [ ] Auto-save works (2-second debounce)
+- [ ] Page reload restores draft
+- [ ] Can go back to previous step to modify data
+- [ ] Submit success saves data to database (source='form')
+- [ ] Session status updates to 'research'
+- [ ] Submit redirects to research page
+- [ ] Error handling: clear error messages displayed
+- [ ] Mobile responsive design works
 
 ---
 
@@ -204,67 +397,15 @@ The Idea Intake Form is the first step in the MVTA analysis workflow. Founders d
 
 ### API Endpoints
 
-**Endpoint 1: POST /api/sessions**
+**Endpoint: POST /api/sessions/[sessionId]/idea**
 
-**Purpose**: Create new MVTA analysis session
-
-**Request**: No body required (user ID from auth token)
-
-**Response** (Success - 201):
-```typescript
-interface CreateSessionResponse {
-  session_id: string;
-  status: 'intake';
-  created_at: string;
-}
-```
-
-**Implementation**:
-```typescript
-// app/api/sessions/route.ts
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { NextResponse } from 'next/server';
-
-export async function POST() {
-  // Use custom auth middleware instead of Supabase Auth
-  const { supabase, user } = await createAuthenticatedSupabaseClient();
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const { data, error } = await supabase
-    .from('sessions')
-    .insert({
-      user_id: user.id,
-      status: 'intake'
-    })
-    .select()
-    .single();
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json({
-    session_id: data.id,
-    status: data.status,
-    created_at: data.created_at
-  }, { status: 201 });
-}
-```
-
----
-
-**Endpoint 2: POST /api/sessions/[sessionId]/ideas**
-
-**Purpose**: Submit raw idea answers and structure with LLM
+**Purpose**: Save structured idea (no LLM call)
 
 **Request**:
 ```typescript
 interface SubmitIdeaRequest {
-  raw_input: string; // Concatenated answers from all questions
+  structured_idea: StructuredIdea;  // Direct from form
+  source: 'form';                   // Mark as form input
 }
 ```
 
@@ -272,76 +413,85 @@ interface SubmitIdeaRequest {
 ```typescript
 interface SubmitIdeaResponse {
   idea_id: string;
-  structured_idea: StructuredIdea; // MVTA JSON schema
+  structured_idea: StructuredIdea;
 }
 ```
 
 **Error Codes**:
-- `SESSION_NOT_FOUND`: Session ID invalid
-- `LLM_FAILED`: LLM structuring failed (suggest retry)
-- `VALIDATION_FAILED`: Structured output doesn't match schema
+- `400 VALIDATION_FAILED`: Zod validation failed (return field-level errors)
+- `404 SESSION_NOT_FOUND`: Session ID invalid
+- `500 DATABASE_ERROR`: Database save failed
 
 **Implementation**:
 ```typescript
-// app/api/sessions/[sessionId]/ideas/route.ts
-import { structureIdea } from '@/lib/llm/prompts';
-import { validateStructuredIdea } from '@/lib/validation/idea-schema';
+// app/api/sessions/[sessionId]/idea/route.ts
 
 export async function POST(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { sessionId: string } }
 ) {
-  const supabase = createRouteHandlerClient({ cookies });
-  const { raw_input } = await request.json();
-
-  // Verify session exists and belongs to user
-  const { data: session, error: sessionError } = await supabase
-    .from('sessions')
-    .select('*')
-    .eq('id', params.sessionId)
-    .single();
-
-  if (sessionError || !session) {
-    return NextResponse.json(
-      { error: 'Session not found', code: 'SESSION_NOT_FOUND' },
-      { status: 404 }
-    );
-  }
-
   try {
-    // Call LLM (Prompt A) to structure idea
-    const structured_idea = await structureIdea(raw_input);
+    const { structured_idea, source = 'form' } = await request.json();
 
-    // Validate output
-    const validatedIdea = validateStructuredIdea(structured_idea);
+    // Zod validation (no LLM call)
+    const validatedIdea = StructuredIdeaSchema.parse(structured_idea);
+
+    const { supabase } = await createAuthenticatedSupabaseClient();
+
+    // Verify session exists
+    const { data: session, error: sessionError } = await supabase
+      .from('sessions')
+      .select('id, status')
+      .eq('id', params.sessionId)
+      .single();
+
+    if (sessionError || !session) {
+      return NextResponse.json(
+        { error: 'Session not found', code: 'SESSION_NOT_FOUND' },
+        { status: 404 }
+      );
+    }
 
     // Save to database
-    const { data: idea, error: ideaError } = await supabase
+    const { data, error } = await supabase
       .from('ideas')
       .insert({
         session_id: params.sessionId,
-        raw_input,
-        structured_idea: validatedIdea
+        raw_input: JSON.stringify(structured_idea), // Store form JSON string
+        structured_idea: validatedIdea,
+        source: source, // New field
       })
-      .select()
+      .select('id')
       .single();
 
-    if (ideaError) {
-      return NextResponse.json({ error: ideaError.message }, { status: 500 });
+    if (error) {
+      throw new Error(`Failed to save idea: ${error.message}`);
     }
 
-    return NextResponse.json({
-      idea_id: idea.id,
-      structured_idea: validatedIdea
-    }, { status: 201 });
+    // Update session status
+    await supabase
+      .from('sessions')
+      .update({ status: 'research' })
+      .eq('id', params.sessionId);
 
+    return NextResponse.json(
+      { idea_id: data.id, structured_idea: validatedIdea },
+      { status: 201 }
+    );
   } catch (error) {
-    console.error('Idea structuring failed:', error);
+    console.error('Submit idea failed:', error);
 
-    return NextResponse.json({
-      error: 'Failed to structure idea. Please try again.',
-      code: 'LLM_FAILED'
-    }, { status: 500 });
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Validation failed', code: 'VALIDATION_FAILED', details: error.errors },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: (error as Error).message, code: 'DATABASE_ERROR' },
+      { status: 500 }
+    );
   }
 }
 ```
@@ -350,400 +500,188 @@ export async function POST(
 
 ### Database Schema
 
-**Table: sessions** (from S-03)
+**Table: ideas** (Modified)
+
+**New Field**:
 ```sql
-CREATE TABLE sessions (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
-  status TEXT NOT NULL DEFAULT 'intake' CHECK (status IN ('intake', 'research', 'analysis', 'completed', 'failed')),
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
+ALTER TABLE ideas
+ADD COLUMN source VARCHAR(10) DEFAULT 'ai' CHECK (source IN ('form', 'ai'));
 ```
 
-**Table: ideas** (from S-03)
+**Complete Schema**:
 ```sql
 CREATE TABLE ideas (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   session_id UUID NOT NULL UNIQUE REFERENCES sessions(id) ON DELETE CASCADE,
-  raw_input TEXT NOT NULL,
-  structured_idea JSONB NOT NULL,
+  raw_input TEXT NOT NULL,              -- AI: free text; Form: JSON string
+  structured_idea JSONB NOT NULL,       -- MVTA JSON format
+  source VARCHAR(10) NOT NULL DEFAULT 'ai' CHECK (source IN ('form', 'ai')),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 ```
+
+**Migration**: See `supabase/migrations/002_add_source_to_ideas.sql`
 
 ---
 
 ### Frontend Components
 
-**Component 1: IntakeWizard**
-
-**File**: `src/components/intake/IntakeWizard.tsx`
-
-**Props**:
-```typescript
-interface IntakeWizardProps {
-  sessionId: string;
-}
+#### File Structure
+```
+app/analyze/[sessionId]/intake/
+├── page.tsx                           # Main page, renders IntakeWizard
+├── components/
+│   ├── IntakeWizard.tsx               # Wizard state machine
+│   ├── Step1CoreConcept.tsx           # Step 1 form fields
+│   ├── Step2Environment.tsx           # Step 2 form fields
+│   ├── Step3AssumptionsAssets.tsx     # Step 3 form fields (arrays)
+│   ├── ArrayFieldInput.tsx            # Reusable array input component
+│   ├── ProgressIndicator.tsx          # Progress bar and stepper
+│   └── FormNavigation.tsx             # Back/Next/Submit buttons
 ```
 
-**State**:
+#### IntakeWizard.tsx
+
+**State Management**:
 ```typescript
-const [currentStep, setCurrentStep] = useState(0);
-const [answers, setAnswers] = useState<Record<string, string>>({});
+// react-hook-form
+const form = useForm<StructuredIdea>({
+  resolver: zodResolver(StructuredIdeaSchema),
+  defaultValues: {
+    high_concept: '',
+    value_proposition: '',
+    success_metric_18m: '',
+    assumptions: {
+      market: [],
+      technical: [],
+      business_model: [],
+    },
+    assets: {
+      key_assets: [],
+      brand_narrative: [],
+    },
+    environment: {
+      user_persona: '',
+      competitive_landscape: '',
+      regulatory_context: '',
+    },
+  },
+});
+
+const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
 const [isSubmitting, setIsSubmitting] = useState(false);
 ```
 
-**Questions Array**:
+**Auto-save**:
 ```typescript
-const QUESTIONS = [
-  {
-    id: 'high_concept',
-    title: "What's your idea?",
-    helper: "Describe it in 1-2 sentences. What does it do?",
-    required: true
-  },
-  {
-    id: 'problem_value',
-    title: "What problem does this solve, and for whom?",
-    helper: "Who experiences this pain point?",
-    required: true
-  },
-  {
-    id: 'success_metric',
-    title: "What does success look like in 18 months?",
-    helper: "Be specific: revenue, users, impact?",
-    required: true
-  },
-  {
-    id: 'assumptions',
-    title: "What are you assuming?",
-    helper: "About the market, technology, or business model",
-    required: false
-  },
-  {
-    id: 'assets',
-    title: "What unique advantages do you have?",
-    helper: "Skills, connections, distribution, IP, etc.",
-    required: false
-  },
-  {
-    id: 'target_users',
-    title: "Who are your target users and main competitors?",
-    helper: "Be as specific as possible",
-    required: true
-  },
-  {
-    id: 'regulatory',
-    title: "Any legal or regulatory considerations?",
-    helper: "Leave blank if not applicable",
-    required: false
-  }
-];
+const formData = form.watch();
+
+useEffect(() => {
+  const timeoutId = setTimeout(() => {
+    localStorage.setItem(
+      `idea-intake-draft-${sessionId}`,
+      JSON.stringify(formData)
+    );
+  }, 2000);
+
+  return () => clearTimeout(timeoutId);
+}, [formData, sessionId]);
 ```
 
-**Example Implementation**:
+**Restore from localStorage**:
 ```typescript
-'use client';
-
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import QuestionCard from './QuestionCard';
-import ProcessingSpinner from './ProcessingSpinner';
-
-export default function IntakeWizard({ sessionId }: IntakeWizardProps) {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const router = useRouter();
-
-  const currentQuestion = QUESTIONS[currentStep];
-  const isLastStep = currentStep === QUESTIONS.length - 1;
-
-  const handleNext = () => {
-    if (currentQuestion.required && !answers[currentQuestion.id]?.trim()) {
-      alert('This question is required');
-      return;
-    }
-
-    if (isLastStep) {
-      handleSubmit();
-    } else {
-      setCurrentStep(currentStep + 1);
-    }
-  };
-
-  const handleBack = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-
-    // Concatenate all answers into raw_input
-    const raw_input = QUESTIONS.map(q =>
-      `Q: ${q.title}\nA: ${answers[q.id] || 'N/A'}\n`
-    ).join('\n');
-
+useEffect(() => {
+  const savedDraft = localStorage.getItem(`idea-intake-draft-${sessionId}`);
+  if (savedDraft) {
     try {
-      const res = await fetch(`/api/sessions/${sessionId}/ideas`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ raw_input })
-      });
-
-      if (!res.ok) {
-        throw new Error('Submission failed');
-      }
-
-      const data = await res.json();
-
-      // Navigate to review page
-      router.push(`/analyze/${sessionId}/intake/review`);
-
-    } catch (error) {
-      alert('Failed to process your idea. Please try again.');
-      setIsSubmitting(false);
+      const parsed = JSON.parse(savedDraft);
+      form.reset(parsed);
+    } catch (e) {
+      console.error('Failed to restore draft:', e);
     }
-  };
-
-  if (isSubmitting) {
-    return <ProcessingSpinner message="Structuring your idea using MVTA framework..." />;
   }
-
-  return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
-      {/* Progress Indicator */}
-      <div className="mb-8">
-        <div className="text-sm text-gray-600 mb-2">
-          Step {currentStep + 1} of {QUESTIONS.length}
-        </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div
-            className="bg-blue-600 h-2 rounded-full transition-all"
-            style={{ width: `${((currentStep + 1) / QUESTIONS.length) * 100}%` }}
-          />
-        </div>
-      </div>
-
-      {/* Current Question */}
-      <QuestionCard
-        question={currentQuestion}
-        value={answers[currentQuestion.id] || ''}
-        onChange={(value) => setAnswers({ ...answers, [currentQuestion.id]: value })}
-      />
-
-      {/* Navigation Buttons */}
-      <div className="flex justify-between mt-8">
-        <button
-          onClick={handleBack}
-          disabled={currentStep === 0}
-          className="px-6 py-2 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Back
-        </button>
-
-        <button
-          onClick={handleNext}
-          className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-        >
-          {isLastStep ? 'Submit' : 'Next'}
-        </button>
-      </div>
-    </div>
-  );
-}
+}, [sessionId]);
 ```
 
----
-
-**Component 2: QuestionCard**
-
-**File**: `src/components/intake/QuestionCard.tsx`
-
-**Props**:
+**Submit**:
 ```typescript
-interface QuestionCardProps {
-  question: {
-    id: string;
-    title: string;
-    helper: string;
-    required: boolean;
-  };
-  value: string;
-  onChange: (value: string) => void;
-}
-```
+const handleSubmit = async (data: StructuredIdea) => {
+  setIsSubmitting(true);
 
-**Implementation**:
-```typescript
-export default function QuestionCard({ question, value, onChange }: QuestionCardProps) {
-  return (
-    <div className="bg-white border border-gray-200 rounded-lg p-8 shadow-sm">
-      <h2 className="text-2xl font-bold mb-2">
-        {question.title}
-        {question.required && <span className="text-red-500 ml-1">*</span>}
-      </h2>
+  try {
+    const res = await fetch(`/api/sessions/${sessionId}/idea`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        structured_idea: data,
+        source: 'form',
+      }),
+    });
 
-      {question.helper && (
-        <p className="text-gray-600 mb-4">{question.helper}</p>
-      )}
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || 'Failed to submit');
+    }
 
-      <textarea
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full min-h-[120px] max-h-[300px] px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
-        placeholder="Type your answer here..."
-      />
-    </div>
-  );
-}
-```
+    // Clear localStorage draft
+    localStorage.removeItem(`idea-intake-draft-${sessionId}`);
 
----
-
-**Component 3: StructuredIdeaReview**
-
-**File**: `src/components/intake/StructuredIdeaReview.tsx`
-
-**Props**:
-```typescript
-interface StructuredIdeaReviewProps {
-  sessionId: string;
-  structuredIdea: StructuredIdea;
-}
-```
-
-**Implementation**:
-```typescript
-'use client';
-
-import { useRouter } from 'next/navigation';
-
-export default function StructuredIdeaReview({
-  sessionId,
-  structuredIdea
-}: StructuredIdeaReviewProps) {
-  const router = useRouter();
-
-  const handleProceed = () => {
+    // Navigate to research page
     router.push(`/analyze/${sessionId}/research`);
-  };
-
-  return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-2">Review Your Structured Idea</h1>
-      <p className="text-gray-600 mb-8">
-        We've structured your idea using the MVTA framework. Review and proceed to research.
-      </p>
-
-      <div className="grid md:grid-cols-2 gap-6 mb-8">
-        {/* High Concept */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h3 className="font-bold text-sm text-gray-500 uppercase mb-2">High Concept</h3>
-          <p className="text-lg">{structuredIdea.high_concept}</p>
-        </div>
-
-        {/* Value Proposition */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h3 className="font-bold text-sm text-gray-500 uppercase mb-2">Value Proposition</h3>
-          <p className="text-lg">{structuredIdea.value_proposition}</p>
-        </div>
-
-        {/* Success Metric */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h3 className="font-bold text-sm text-gray-500 uppercase mb-2">Success Metric (18m)</h3>
-          <p className="text-lg">{structuredIdea.success_metric_18m}</p>
-        </div>
-
-        {/* Assumptions */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h3 className="font-bold text-sm text-gray-500 uppercase mb-2">Key Assumptions</h3>
-          <div className="space-y-2">
-            {structuredIdea.assumptions.market.map((a, i) => (
-              <p key={i} className="text-sm">• {a}</p>
-            ))}
-            {structuredIdea.assumptions.technical.map((a, i) => (
-              <p key={i} className="text-sm">• {a}</p>
-            ))}
-            {structuredIdea.assumptions.business_model.map((a, i) => (
-              <p key={i} className="text-sm">• {a}</p>
-            ))}
-          </div>
-        </div>
-
-        {/* Key Assets */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h3 className="font-bold text-sm text-gray-500 uppercase mb-2">Key Assets</h3>
-          <div className="space-y-2">
-            {structuredIdea.assets.key_assets.map((a, i) => (
-              <p key={i} className="text-sm">• {a}</p>
-            ))}
-          </div>
-        </div>
-
-        {/* Environment */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h3 className="font-bold text-sm text-gray-500 uppercase mb-2">Target Market</h3>
-          <p className="text-sm mb-2"><strong>User:</strong> {structuredIdea.environment.user_persona}</p>
-          <p className="text-sm"><strong>Competitors:</strong> {structuredIdea.environment.competitive_landscape}</p>
-        </div>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex justify-between">
-        <button
-          onClick={() => router.back()}
-          className="px-6 py-2 border border-gray-300 rounded hover:bg-gray-50"
-        >
-          Edit Answers
-        </button>
-
-        <button
-          onClick={handleProceed}
-          className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
-        >
-          Looks Good - Proceed to Research
-        </button>
-      </div>
-    </div>
-  );
-}
+  } catch (error) {
+    alert((error as Error).message);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 ```
 
 ---
 
-### State Management
+### Validation
 
-**Local Storage (Auto-save)**:
+**Zod Schemas** (`src/lib/validation/schemas.ts`):
+
 ```typescript
-// src/lib/intake/auto-save.ts
-export function saveAnswersToLocalStorage(sessionId: string, answers: Record<string, string>) {
-  localStorage.setItem(`intake-${sessionId}`, JSON.stringify(answers));
-}
+export const StructuredIdeaSchema = z.object({
+  high_concept: z.string().min(10, 'At least 10 characters').max(150, 'Maximum 150 characters'),
+  value_proposition: z.string().min(20, 'At least 20 characters').max(300, 'Maximum 300 characters'),
+  success_metric_18m: z.string().min(10, 'At least 10 characters').max(150, 'Maximum 150 characters'),
 
-export function loadAnswersFromLocalStorage(sessionId: string): Record<string, string> {
-  const saved = localStorage.getItem(`intake-${sessionId}`);
-  return saved ? JSON.parse(saved) : {};
-}
+  assumptions: z.object({
+    market: z.array(z.string().max(200, 'Each item max 200 characters')).default([]),
+    technical: z.array(z.string().max(200)).default([]),
+    business_model: z.array(z.string().max(200)).default([]),
+  }).default({ market: [], technical: [], business_model: [] }),
 
-export function clearAnswersFromLocalStorage(sessionId: string) {
-  localStorage.removeItem(`intake-${sessionId}`);
-}
+  assets: z.object({
+    key_assets: z.array(z.string().max(150)).default([]),
+    brand_narrative: z.array(z.string().max(150)).default([]),
+  }).default({ key_assets: [], brand_narrative: [] }),
+
+  environment: z.object({
+    user_persona: z.string().min(20, 'At least 20 characters').max(300, 'Maximum 300 characters'),
+    competitive_landscape: z.string().min(20, 'At least 20 characters').max(400, 'Maximum 400 characters'),
+    regulatory_context: z.string().max(400).default(''),
+  }),
+});
+
+// Step-by-step validation
+export const Step1Schema = StructuredIdeaSchema.pick({
+  high_concept: true,
+  value_proposition: true,
+  success_metric_18m: true,
+});
+
+export const Step2Schema = StructuredIdeaSchema.pick({
+  environment: true,
+});
+
+export const Step3Schema = StructuredIdeaSchema.pick({
+  assumptions: true,
+  assets: true,
+});
 ```
-
----
-
-### Prompt Engineering
-
-**See [S-04: LLM Integration](../system/S-04-llm-integration.md) for complete Prompt A definition.**
-
-**Summary of Prompt A**:
-- **Input**: Raw concatenated answers from 7 questions
-- **Output**: Structured JSON matching MVTA schema
-- **Rules**: No fabrication, extract key points only, use empty strings/arrays if data missing
 
 ---
 
@@ -751,82 +689,80 @@ export function clearAnswersFromLocalStorage(sessionId: string) {
 
 ### Tier 1 Critical Path Test
 
-**Test Name**: `Idea Intake and Structuring - Happy Path`
+**Test Name**: `Idea Intake Form - 3-Step Wizard Happy Path`
 
-**Description**: Verify that a user can complete the intake form, submit answers, and receive structured MVTA output.
+**Description**: Verify user can complete 3-step wizard, submit form, data saved correctly
 
 **Preconditions**:
-- User is authenticated
-- Session is created (status='intake')
-- AI Builders API is accessible
+- User authenticated
+- Session created (status='intake')
 
 **Steps**:
-1. Navigate to `/analyze/[session_id]/intake`
-2. Fill in Question 1: "An AI-powered email assistant for busy founders"
-3. Click "Next"
-4. Fill in Question 2: "Founders waste 2 hours/day on email. This automates responses."
-5. Click "Next"
-6. Fill in Question 3: "10,000 paying users at $20/mo = $200K MRR"
-7. Continue through remaining questions (can skip optional ones)
-8. Click "Submit"
-9. Wait for LLM processing
-10. Verify structured idea is saved to database
-11. Verify review page displays structured output
-12. Verify "Proceed to Research" button navigates correctly
+1. Navigate to `/analyze/[sessionId]/intake`
+2. **Step 1**:
+   - Fill high_concept: "AI-powered idea validation platform"
+   - Fill value_proposition: "Helps solo founders identify risks before investing time and money"
+   - Fill success_metric_18m: "10,000 validated ideas, 70% accuracy"
+   - Click "Next"
+3. **Step 2**:
+   - Fill user_persona: "Solo founders and early-stage entrepreneurs"
+   - Fill competitive_landscape: "Similar tools: ProductHunt, BetaList, but none combine automated research with adversarial analysis"
+   - Skip regulatory_context
+   - Click "Next"
+4. **Step 3**:
+   - Add 1 market assumption: "Founders spend 2 hours/day gathering feedback"
+   - Skip other fields (optional)
+   - Click "Submit & Continue"
+5. Verify data saved to database:
+   - `ideas` table has new record
+   - `source = 'form'`
+   - `structured_idea` matches submitted data
+6. Verify session status updated to 'research'
+7. Verify redirect to `/analyze/[sessionId]/research`
 
 **Expected Results**:
-- Form accepts all answers
-- LLM returns valid structured JSON
-- Structured idea is saved to `ideas` table with correct session_id
-- Review page displays all MVTA fields correctly
-- No errors during submission
+- 3-step wizard flows smoothly
+- Required field validation works
+- Data saved correctly (source='form')
+- Session status updated correctly
+- No errors occur
 
-**Failure Impact**: ❌ **BLOCKS DEPLOYMENT** (Tier 1 tests must pass)
+**Failure Impact**: ❌ **BLOCKS DEPLOYMENT** (Tier 1)
 
 ---
 
 ### E2E Tests
 
-**Test 1: Complete Intake Flow**
+**Test 1: Complete Wizard Flow**
 ```typescript
 import { test, expect } from '@playwright/test';
 
-test('User can complete intake form and review structured idea', async ({ page }) => {
-  // Precondition: User logged in, session created
+test('User completes 3-step wizard and submits idea', async ({ page }) => {
   const sessionId = await createTestSession(page);
 
   await page.goto(`/analyze/${sessionId}/intake`);
 
-  // Step 1: Answer Question 1
-  await page.fill('textarea', 'An AI coding assistant for React developers');
+  // Step 1
+  await expect(page.locator('text=/step 1 of 3/i')).toBeVisible();
+  await page.fill('[name="high_concept"]', 'AI idea validation platform');
+  await page.fill('[name="value_proposition"]', 'Helps founders identify risks early');
+  await page.fill('[name="success_metric_18m"]', '10K users, 70% accuracy');
   await page.click('button:has-text("Next")');
 
-  // Step 2: Answer Question 2
-  await page.fill('textarea', 'React developers struggle with boilerplate code and debugging');
+  // Step 2
+  await expect(page.locator('text=/step 2 of 3/i')).toBeVisible();
+  await page.fill('[name="environment.user_persona"]', 'Solo founders, 25-45 years old');
+  await page.fill('[name="environment.competitive_landscape"]', 'ProductHunt, BetaList');
   await page.click('button:has-text("Next")');
 
-  // Step 3: Answer Question 3
-  await page.fill('textarea', '50,000 active users and $100K MRR');
-  await page.click('button:has-text("Next")');
+  // Step 3
+  await expect(page.locator('text=/step 3 of 3/i')).toBeVisible();
+  await page.click('button:has-text("Add Market Assumption")');
+  await page.fill('[name="assumptions.market.0"]', 'Founders lack validation tools');
+  await page.click('button:has-text("Submit & Continue")');
 
-  // Skip optional questions (click Next without filling)
-  await page.click('button:has-text("Next")'); // Q4
-  await page.click('button:has-text("Next")'); // Q5
-
-  // Step 6: Answer Question 6
-  await page.fill('textarea', 'Target: Frontend developers at startups. Competitors: GitHub Copilot, Cursor');
-  await page.click('button:has-text("Next")');
-
-  // Step 7: Skip regulatory question
-  await page.click('button:has-text("Submit")');
-
-  // Wait for processing
-  await expect(page.locator('text=/structuring your idea/i')).toBeVisible();
-
-  // Verify review page loads
-  await expect(page).toHaveURL(new RegExp(`/analyze/${sessionId}/intake/review`));
-  await expect(page.locator('text=/high concept/i')).toBeVisible();
-  await expect(page.locator('text=/value proposition/i')).toBeVisible();
+  // Verify redirect
+  await expect(page).toHaveURL(new RegExp(`/analyze/${sessionId}/research`));
 });
 ```
 
@@ -834,13 +770,34 @@ test('User can complete intake form and review structured idea', async ({ page }
 ```typescript
 test('Cannot proceed without required fields', async ({ page }) => {
   const sessionId = await createTestSession(page);
-
   await page.goto(`/analyze/${sessionId}/intake`);
 
-  // Try to skip required question
+  // Try to proceed without filling required fields
   await page.click('button:has-text("Next")');
 
-  await expect(page.locator('text=/required/i')).toBeVisible();
+  // Should see validation errors
+  await expect(page.locator('text=/at least 10 characters/i')).toBeVisible();
+});
+```
+
+**Test 3: Auto-save and Restore**
+```typescript
+test('Auto-saves draft and restores on reload', async ({ page }) => {
+  const sessionId = await createTestSession(page);
+  await page.goto(`/analyze/${sessionId}/intake`);
+
+  // Fill some fields
+  await page.fill('[name="high_concept"]', 'Test idea');
+
+  // Wait for auto-save (2 seconds)
+  await page.waitForTimeout(2500);
+
+  // Reload page
+  await page.reload();
+
+  // Verify data restored
+  const value = await page.inputValue('[name="high_concept"]');
+  expect(value).toBe('Test idea');
 });
 ```
 
@@ -848,60 +805,57 @@ test('Cannot proceed without required fields', async ({ page }) => {
 
 ### Integration Tests
 
-**Test 1: Idea Submission API**
+**Test 1: API Endpoint - Successful Submission**
 ```typescript
-describe('POST /api/sessions/[sessionId]/ideas', () => {
-  it('should structure idea using LLM and save to database', async () => {
+describe('POST /api/sessions/[sessionId]/idea', () => {
+  it('should save form data without calling LLM', async () => {
     const sessionId = await createTestSessionInDb();
 
-    const response = await fetch(`/api/sessions/${sessionId}/ideas`, {
+    const response = await fetch(`/api/sessions/${sessionId}/idea`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        raw_input: 'Q: What is your idea?\nA: An AI email assistant for founders'
-      })
+        structured_idea: {
+          high_concept: 'AI validation platform',
+          value_proposition: 'Helps founders validate ideas',
+          success_metric_18m: '10K users',
+          assumptions: { market: [], technical: [], business_model: [] },
+          assets: { key_assets: [], brand_narrative: [] },
+          environment: {
+            user_persona: 'Solo founders',
+            competitive_landscape: 'ProductHunt, BetaList',
+            regulatory_context: '',
+          },
+        },
+        source: 'form',
+      }),
     });
 
     expect(response.status).toBe(201);
     const data = await response.json();
-
     expect(data).toHaveProperty('idea_id');
-    expect(data.structured_idea).toHaveProperty('high_concept');
-    expect(data.structured_idea).toHaveProperty('value_proposition');
-    expect(data.structured_idea).toHaveProperty('assumptions');
+    expect(data.structured_idea.high_concept).toBe('AI validation platform');
+
+    // Verify in database
+    const idea = await getIdeaFromDb(data.idea_id);
+    expect(idea.source).toBe('form');
   });
 
-  it('should fail if session does not exist', async () => {
-    const response = await fetch('/api/sessions/invalid-id/ideas', {
+  it('should return 400 if validation fails', async () => {
+    const sessionId = await createTestSessionInDb();
+
+    const response = await fetch(`/api/sessions/${sessionId}/idea`, {
       method: 'POST',
-      body: JSON.stringify({ raw_input: 'test' })
+      body: JSON.stringify({
+        structured_idea: {
+          high_concept: 'Too short', // < 10 chars
+        },
+      }),
     });
 
-    expect(response.status).toBe(404);
+    expect(response.status).toBe(400);
     const data = await response.json();
-    expect(data.code).toBe('SESSION_NOT_FOUND');
-  });
-});
-```
-
-**Test 2: LLM Prompt Validation**
-```typescript
-describe('LLM Prompt A - Idea Structuring', () => {
-  it('should return valid MVTA JSON schema', async () => {
-    const rawInput = `
-      Q: What's your idea?
-      A: A SaaS tool for email marketing automation targeted at SMBs.
-
-      Q: What problem does this solve?
-      A: SMBs can't afford Mailchimp and find it too complex.
-    `;
-
-    const structured = await structureIdea(rawInput);
-
-    expect(structured).toHaveProperty('high_concept');
-    expect(structured).toHaveProperty('value_proposition');
-    expect(structured).toHaveProperty('assumptions');
-    expect(Array.isArray(structured.assumptions.market)).toBe(true);
+    expect(data.code).toBe('VALIDATION_FAILED');
   });
 });
 ```
@@ -910,30 +864,43 @@ describe('LLM Prompt A - Idea Structuring', () => {
 
 ### Unit Tests
 
-**Test 1: Answer Validation**
+**Test 1: ArrayFieldInput Component**
 ```typescript
-import { validateAnswers } from '@/lib/intake/validation';
+import { render, screen, fireEvent } from '@testing-library/react';
+import ArrayFieldInput from './ArrayFieldInput';
 
-describe('Answer Validation', () => {
-  it('should reject when required fields are empty', () => {
-    const answers = {
-      high_concept: '',
-      problem_value: 'Some text',
-      success_metric: 'Some text'
-    };
+describe('ArrayFieldInput', () => {
+  it('should add new field when clicking "Add"', () => {
+    const handleChange = jest.fn();
+    render(
+      <ArrayFieldInput
+        label="Market Assumptions"
+        maxLength={200}
+        placeholder="Test"
+        values={[]}
+        onChange={handleChange}
+      />
+    );
 
-    expect(validateAnswers(answers)).toBe(false);
+    fireEvent.click(screen.getByText(/add/i));
+    expect(handleChange).toHaveBeenCalledWith(['']);
   });
 
-  it('should accept when all required fields are filled', () => {
-    const answers = {
-      high_concept: 'AI assistant',
-      problem_value: 'Solve X for Y',
-      success_metric: '100K users',
-      target_users: 'Developers'
-    };
+  it('should remove field when clicking X', () => {
+    const handleChange = jest.fn();
+    render(
+      <ArrayFieldInput
+        label="Market Assumptions"
+        maxLength={200}
+        placeholder="Test"
+        values={['Item 1', 'Item 2']}
+        onChange={handleChange}
+      />
+    );
 
-    expect(validateAnswers(answers)).toBe(true);
+    const removeButtons = screen.getAllByLabelText('Remove');
+    fireEvent.click(removeButtons[0]);
+    expect(handleChange).toHaveBeenCalledWith(['Item 2']);
   });
 });
 ```
@@ -942,23 +909,38 @@ describe('Answer Validation', () => {
 
 ## Notes
 
+### Key Differences from v1.0
+
+| Aspect | v1.0 (AI Extraction) | v2.0 (Form Input) |
+|--------|---------------------|-------------------|
+| Input Method | 7 free-text questions | 3-step structured form |
+| Processing | LLM extraction (Prompt A) | Direct validation and save |
+| Completion Time | 5-10 min + 30s wait | 8-12 minutes |
+| Accuracy | Depends on LLM understanding | User directly controls |
+| Cost | ~$0.02 per submission | No LLM cost |
+| Data Source | source='ai' | source='form' |
+| Auto-save | None | 2-second debounce |
+| Field Validation | On submit only | Real-time + step-by-step |
+
 ### Future Enhancements
 
-- **Voice Input**: Allow founders to speak their answers (transcribe to text)
-- **Example Ideas**: Show sample answers for inspiration
-- **Save Draft**: Allow users to save incomplete forms and resume later
-- **Collaborative Input**: Allow co-founders to contribute to answers
-- **Multi-language Support**: Translate questions and accept non-English answers
-- **Idea Templates**: Pre-fill questions based on industry (SaaS, marketplace, B2B)
+- **AI-Assisted Suggestions**: Add "Get AI Suggestion" button next to each field (optional)
+- **Template Library**: Pre-fill examples based on industry (SaaS, Marketplace, B2B, etc.)
+- **Draft Management**: Save multiple drafts, display incomplete intakes on dashboard
+- **Collaborative Editing**: Allow team members to collaborate on filling form
+- **Voice Input**: Support voice-to-text on mobile
+- **Internationalization**: Multi-language UI and placeholders
 
 ### Known Limitations
 
-- No real-time collaboration (single user fills form)
-- LLM structuring is one-way (can't edit structured output directly)
-- No version history for answers
-- Auto-save relies on localStorage (not synced to server until submission)
+- Auto-save only client-side (localStorage), server doesn't store drafts
+- No real-time collaboration
+- No version history
+- Array fields don't support drag-to-reorder
 
 ### References
 
-- [S-04: LLM Integration](../system/S-04-llm-integration.md) - Prompt A details
 - [S-03: Database Schema](../system/S-03-database-schema.md) - ideas table schema
+- [S-04: LLM Integration](../system/S-04-llm-integration.md) - Though Prompt A no longer used, other prompts still referenced
+- [Zod Documentation](https://zod.dev/) - Schema validation
+- [React Hook Form](https://react-hook-form.com/) - Form state management
