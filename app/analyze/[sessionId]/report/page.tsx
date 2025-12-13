@@ -109,10 +109,20 @@ export default function ReportPage() {
       <div className="max-w-container mx-auto px-8">
         {/* Header */}
         <div className="bg-bg-primary rounded-lg shadow-card p-8 mb-8">
-          <h1 className="text-3xl font-bold text-text-primary mb-2">MVTA Damage Report</h1>
-          <p className="text-text-secondary mb-6">
-            Red Team Analysis Complete • {new Date(report.created_at).toLocaleDateString()}
-          </p>
+          <div className="flex items-start justify-between mb-6">
+            <div>
+              <h1 className="text-3xl font-bold text-text-primary mb-2">MVTA Damage Report</h1>
+              <p className="text-text-secondary">
+                Red Team Analysis Complete • {new Date(report.created_at).toLocaleDateString()}
+              </p>
+            </div>
+            <button
+              onClick={() => router.push(`/analyze/${sessionId}/choice`)}
+              className="px-6 py-3 border border-border-medium text-text-primary rounded-lg hover:border-border-dark transition-colors flex-shrink-0"
+            >
+              Back to Idea Page
+            </button>
+          </div>
 
           {/* Executive Summary */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -221,15 +231,6 @@ export default function ReportPage() {
           </div>
         </div>
 
-        {/* Navigation */}
-        <div className="mt-8">
-          <button
-            onClick={() => router.push(`/analyze/${sessionId}/choice`)}
-            className="px-6 py-3 bg-brand-primary text-white rounded-lg hover:bg-brand-hover transition-colors"
-          >
-            Back to Idea Choice
-          </button>
-        </div>
       </div>
     </div>
   );

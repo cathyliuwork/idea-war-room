@@ -77,7 +77,8 @@ export default function ChoicePage() {
 
   // Navigation handlers
   const handleStartResearch = () => {
-    router.push(`/analyze/${sessionId}/research`);
+    // Navigate to research type selection page
+    router.push(`/analyze/${sessionId}/research-choice`);
   };
 
   const handleStartAnalysis = () => {

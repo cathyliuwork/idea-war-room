@@ -77,21 +77,27 @@ The Idea Analysis Choice Page is the central hub of the branching workflow. Afte
 - System: Navigates directly to Damage Report page (F-05)
 - User: Views damage report, can click "Back to Idea Choice" to return
 
-**Scenario 2: Research First**
-- User: Clicks "Start Research" button
-- System: Navigates to `/analyze/[sessionId]/research` (F-08)
-- [F-08 executes research]
+**Scenario 2: Research First** (UPDATED - Multi-Type Research)
+- User: Clicks "Online Research" button
+- System: Navigates to `/analyze/[sessionId]/research-choice` (F-08 Type Selection)
+- User: Selects research type (e.g., Competitor Research)
+- System: Navigates to `/analyze/[sessionId]/research?type=competitor`
+- [F-08 executes competitor research only]
 - System: Returns to Choice Page
-- User: Sees Research badge as "Completed", MVTA button becomes highlighted
+- User: Sees Research badge updated (e.g., "1 type completed")
+- User: Can click "Online Research" again to select and run other types
 - User: Clicks "Start MVTA Analysis"
 - [F-04 executes MVTA - NOTE: MVTA does NOT use research data per requirements]
 - System: Navigates directly to Damage Report page (F-05)
-- User: Views damage report, can click "Back to Idea Choice" to return and see both badges as "Completed"
+- User: Views damage report, can click "Back to Idea Choice" to return
 
-**Scenario 3: After Completion**
-- User: Has completed Research and/or MVTA
-- Research button: Shows "Research Completed" and is disabled (cannot re-run)
-- MVTA button: Shows "MVTA Analysis" and navigates to report when clicked
+**Scenario 3: After Completion** (UPDATED)
+- User: Has completed one or more Research types and/or MVTA
+- Research button: Shows "Online Research" with badge "(X types completed)"
+  - Clicking navigates to research-choice page where user can:
+    - View completed research types (click to see results)
+    - Run additional research types (click to execute)
+- MVTA button: Shows "Review Report" and navigates to report when MVTA completed
 
 ---
 
@@ -162,22 +168,25 @@ The Idea Analysis Choice Page is the central hub of the branching workflow. Afte
   - When `analysis_completed = true` → Navigate to report page (view results)
 - **No Re-run**: Once completed, can only view report (re-run feature moved to future version)
 
-**Research Button Behavior**:
-- **Button Label**:
-  - When `research_completed = false` → "Start Research"
-  - When `research_completed = true` → "Research Completed"
-- **Click Action**:
-  - When not completed → Navigate to research page
-  - When completed → Disabled (no re-run in MVP)
+**Research Button Behavior** (UPDATED for Multi-Type):
+- **Button Label**: Always "Online Research"
+- **Badge** (optional):
+  - When 0 types completed → No badge or "Not Started"
+  - When 1-2 types completed → "X types completed"
+  - When 3 types completed → "All completed ✓"
+- **Click Action**: Always navigate to `/analyze/[sessionId]/research-choice` (F-08 Type Selection)
+  - User can view completed types or run new types from there
 
-**Button States Table**:
+**Button States Table** (UPDATED):
 
-| research_completed | analysis_completed | Research Button | MVTA Button |
-|-------------------|-------------------|----------------|-------------|
-| false | false | "Start Research" (enabled) | "Start Analysis" → run |
-| true | false | "Research Completed" (disabled) | "Start Analysis" → run (highlighted) |
-| false | true | "Start Research" (enabled) | "Review Report" → view report |
-| true | true | "Research Completed" (disabled) | "Review Report" → view report |
+| research_types_completed | analysis_completed | Research Button | MVTA Button |
+|-------------------------|-------------------|----------------|-------------|
+| 0 | false | "Online Research" (enabled) | "Start Analysis" → run |
+| 1-2 | false | "Online Research" + "X types completed" badge | "Start Analysis" → run |
+| 3 | false | "Online Research" + "All completed ✓" | "Start Analysis" → run |
+| 0-3 | true | "Online Research" + badge (always enabled) | "Review Report" → view report |
+
+**Note**: Research button is **always enabled** - it navigates to research-choice page where users can view or run research types.
 
 **Design Rationale**:
 - **Consistent UX**: Buttons clearly indicate completion state
@@ -192,18 +201,20 @@ The Idea Analysis Choice Page is the central hub of the branching workflow. Afte
 **Entry Points**:
 1. From F-02 Intake Form (after submission)
 2. From F-05 Damage Report Display (via "Back to Idea Choice" button)
-3. From F-08 Research Engine (after completion)
+3. From F-08 Research Engine (after completing a research type)
+4. From F-08 Research Type Selection (via "Back to Choice Page" button)
 
-**Exit Points**:
+**Exit Points** (UPDATED):
 1. To F-04 MVTA Analysis (when user clicks "Start Analysis" and analysis not completed)
-2. To F-08 Research Engine (when user clicks "Start Research" and research not completed)
+2. To **F-08 Research Type Selection** (when user clicks "Online Research" - always enabled)
 3. To F-05 Damage Report Display (when user clicks "Review Report" after MVTA completion)
 4. To Dashboard (via "Back to Dashboard" button)
 
 **Return Behavior**:
-- F-08 (Research Engine) returns to this page after completion
+- F-08 (Research Engine) returns to this page after completing a research type
+- F-08 (Research Type Selection) can return via "Back to Choice Page" button
 - F-04 (MVTA Analysis) navigates directly to F-05 (Damage Report); user can return via "Back to Idea Choice" button
-- Status badges update to reflect completed actions when returning to page
+- Research badge updates to reflect number of completed research types when returning to page
 
 ---
 
@@ -289,22 +300,22 @@ interface ChoicePageState {
 
 ### Acceptance Criteria
 
-- [✓] User lands on choice page after completing intake form
-- [✓] Idea summary displays Step 1 fields by default
-- [✓] "Show Full Details" expands to show all intake fields
-- [✓] Two action cards display with correct icons and descriptions
-- [✓] Status badges accurately reflect completion state
-- [✓] **MVTA button smart labeling and navigation**:
+- [ ] User lands on choice page after completing intake form
+- [ ] Idea summary displays Step 1 fields by default
+- [ ] "Show Full Details" expands to show all intake fields
+- [ ] Two action cards display with correct icons and descriptions
+- [ ] **MVTA button smart labeling and navigation**:
   - When not completed → Shows "Start Analysis", navigates to F-04
   - When completed → Shows "Review Report", navigates to F-05
-- [✓] **No re-run buttons** (feature deferred to future version)
-- [✓] Clicking Research button navigates to F-08 (only when not completed)
-- [✓] Research button shows "Start Research" when not completed, "Research Completed" (disabled) when done
-- [✓] After completing Research, user returns to choice page automatically
-- [✓] After completing MVTA, user navigates to Damage Report (F-05), can return via "Back to Idea Choice" button
-- [✓] Status badges update after returning from completed actions
-- [✓] Page handles missing data gracefully (redirects to appropriate page)
-- [✓] No redundant "View Damage Report" button at page bottom
+- [ ] **Research button (UPDATED for multi-type)**:
+  - Always shows "Online Research" label
+  - Shows badge with completion count (e.g., "1 type completed", "All completed ✓")
+  - Always enabled - navigates to F-08 Research Type Selection
+- [ ] After completing a research type, user returns to choice page automatically
+- [ ] Research badge updates to reflect number of completed types
+- [ ] After completing MVTA, user navigates to Damage Report (F-05), can return via "Back to Idea Choice" button
+- [ ] Page handles missing data gracefully (redirects to appropriate page)
+- [ ] No redundant "View Damage Report" button at page bottom
 
 ---
 

@@ -1,32 +1,40 @@
 'use client';
 
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import { isValidResearchType, getResearchTypeConfig } from '@/lib/constants/research';
 
 /**
- * Research Page (Simplified MVP)
+ * Research Page (UPDATED for multi-type support)
  *
- * Initiates and displays research phase results.
- * User clicks button to start research, sees loading state, then results summary.
+ * Initiates and displays research phase results for specific type.
+ * Requires ?type=competitor|community|regulatory parameter.
  */
 
 interface ResearchResults {
   research_snapshot_id: string;
-  competitors_found: number;
-  community_signals_found: number;
-  regulatory_signals_found: number;
+  research_type: string;
+  results_count: number;
+  queries: string[];
 }
 
 export default function ResearchPage() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
+
   const sessionId = params.sessionId as string;
+  const type = searchParams.get('type');
 
   const [isResearching, setIsResearching] = useState(false);
   const [results, setResults] = useState<ResearchResults | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Validate type parameter
+  const isValidType = type && isValidResearchType(type);
+  const typeConfig = isValidType ? getResearchTypeConfig(type) : null;
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -35,11 +43,16 @@ export default function ResearchPage() {
   }, [user, isLoading, router]);
 
   const handleStartResearch = async () => {
+    if (!type || !isValidType) {
+      setError('Invalid or missing research type parameter. Use ?type=competitor|community|regulatory');
+      return;
+    }
+
     setIsResearching(true);
     setError(null);
 
     try {
-      const res = await fetch(`/api/sessions/${sessionId}/research`, {
+      const res = await fetch(`/api/sessions/${sessionId}/research?type=${type}`, {
         method: 'POST',
       });
 
@@ -51,16 +64,8 @@ export default function ResearchPage() {
       const data = await res.json();
       setResults(data);
 
-      alert(
-        `Research complete!\n\n` +
-          `✅ Found ${data.competitors_found} competitors\n` +
-          `✅ Analyzed ${data.community_signals_found} community discussions\n` +
-          `✅ Identified ${data.regulatory_signals_found} regulatory considerations\n\n` +
-          `Returning to choice page...`
-      );
-
-      // Navigate back to choice page
-      router.push(`/analyze/${sessionId}/choice`);
+      // Navigate directly to results page (no alert)
+      router.push(`/analyze/${sessionId}/research/${type}`);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -76,14 +81,37 @@ export default function ResearchPage() {
     );
   }
 
+  // Show error if type is invalid
+  if (!isValidType) {
+    return (
+      <div className="min-h-screen bg-bg-secondary py-12">
+        <div className="max-w-reading mx-auto px-6">
+          <div className="bg-bg-primary rounded-lg shadow-card p-8">
+            <h1 className="text-2xl font-bold text-text-primary mb-2">Invalid Research Type</h1>
+            <p className="text-text-secondary mb-6">
+              Please select a valid research type from the research types page.
+            </p>
+            <button
+              onClick={() => router.push(`/analyze/${sessionId}/research-choice`)}
+              className="px-6 py-3 bg-brand-primary text-white font-semibold rounded-lg hover:bg-brand-hover transition-colors"
+            >
+              Back to Research Types
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-bg-secondary py-12">
       <div className="max-w-reading mx-auto px-6">
         <div className="bg-bg-primary rounded-lg shadow-card p-8">
-          <h1 className="text-2xl font-bold text-text-primary mb-2">Research Phase</h1>
+          <h1 className="text-2xl font-bold text-text-primary mb-2">
+            {typeConfig?.icon} {typeConfig?.label}
+          </h1>
           <p className="text-text-secondary mb-6">
-            We'll now research competitors, community discussions, and regulatory context to
-            provide evidence-backed analysis. This takes 2-5 minutes.
+            {typeConfig?.description} This takes 1-3 minutes.
           </p>
 
           {error && (
@@ -109,13 +137,11 @@ export default function ResearchPage() {
                     <br />
                     1. Generating targeted research queries...
                     <br />
-                    2. Searching for competitors and alternatives...
+                    2. {type === 'competitor' && 'Searching for competitors and alternatives...'}
+                    {type === 'community' && 'Analyzing community discussions and reviews...'}
+                    {type === 'regulatory' && 'Checking regulatory requirements...'}
                     <br />
-                    3. Analyzing community discussions and reviews...
-                    <br />
-                    4. Checking regulatory requirements...
-                    <br />
-                    5. Synthesizing findings with AI...
+                    3. Synthesizing findings with AI...
                   </p>
                 </div>
               )}

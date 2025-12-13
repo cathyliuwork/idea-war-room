@@ -29,27 +29,17 @@ export default function ActionButtons({
   onStartAnalysis,
   onViewReport,
 }: ActionButtonsProps) {
-  // Determine button configurations based on completion state
-  const getResearchConfig = () => {
-    if (session.research_completed) {
-      return {
-        label: 'Research Completed',
-        variant: 'secondary' as const,
-        badge: 'Completed',
-        badgeColor: 'bg-green-100 text-green-800',
-        disabled: true,
-      };
-    }
-    return {
-      label: 'Start Research',
-      variant: session.analysis_completed ? 'primary' : 'secondary' as const,
-      badge: 'Not Started',
-      badgeColor: 'bg-gray-100 text-gray-800',
-      disabled: false,
-    };
+  // Research button: always "Online Research", always enabled
+  // Badge shows completion status (multi-type support)
+  const researchConfig = {
+    label: 'Online Research',
+    variant: 'secondary' as const,
+    badge: session.research_completed ? 'Completed' : 'Not Started',
+    badgeColor: session.research_completed
+      ? 'bg-green-100 text-green-800'
+      : 'bg-gray-100 text-gray-800',
+    disabled: false, // Always enabled
   };
-
-  const researchConfig = getResearchConfig();
 
   // Analysis button label changes based on completion state
   const analysisCompleted = session.analysis_completed;
@@ -164,29 +154,22 @@ export default function ActionButtons({
         </div>
 
         <p className="text-text-secondary mb-6">
-          Gather competitive intelligence and market signals. Search for competitors,
-          community discussions, and regulatory context to inform your strategy.
+          Choose from competitor analysis, community voice research, or regulatory
+          compliance. Run one or all three types independently.
         </p>
 
         <button
           onClick={onStartResearch}
-          disabled={researchConfig.disabled}
-          className={`w-full px-6 py-3 rounded-lg font-semibold transition-colors ${
-            researchConfig.disabled
-              ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-              : researchConfig.variant === 'primary'
-              ? 'bg-brand-primary text-white hover:bg-brand-hover'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-          }`}
+          className="w-full px-6 py-3 rounded-lg font-semibold transition-colors bg-white text-brand-primary border-2 border-brand-primary hover:bg-brand-light"
         >
           {researchConfig.label}
         </button>
 
-        {!session.research_completed && (
-          <p className="mt-3 text-sm text-text-secondary">
-            Optional: Research can be done before or after MVTA
-          </p>
-        )}
+        <p className="mt-3 text-sm text-text-secondary">
+          {session.research_completed
+            ? 'View or run additional research types'
+            : 'Optional: Research can be done before or after MVTA'}
+        </p>
       </div>
     </div>
   );

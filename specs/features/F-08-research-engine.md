@@ -1,17 +1,17 @@
 # F-08: Research Engine
 
-**Version**: 1.1
-**Last Updated**: 2025-12-11
+**Version**: 2.0
+**Last Updated**: 2025-12-12
 **Priority**: OPTIONAL
-**Status**: ✅ Spec Complete (moved from F-03, now optional)
+**Status**: 🚧 Spec Updated (supports single-type research)
 
 ---
 
 ## Quick Reference
 
-**What**: Execute research queries using AI Builders Search API, fetch competitor data, community signals (Reddit, forums), and regulatory context. Synthesize results into research snapshot.
+**What**: Execute **single-type** research queries (Competitor, Community, or Regulatory) using AI Builders Search API. Users select research type before execution, and can run multiple types independently for the same idea.
 
-**Why**: Evidence-backed analysis provides stronger validation of MVTA insights. However, MVTA can provide value even without research by stress-testing the founder's assumptions.
+**Why**: Evidence-backed analysis provides stronger validation of MVTA insights. Splitting research into types allows users to focus on specific intelligence areas.
 
 **Status**: OPTIONAL - Users can choose to skip research and run MVTA directly with idea data only.
 
@@ -19,16 +19,19 @@
 - F-01: Database & Authentication (stores research snapshots)
 - F-02: Idea Intake Form (uses structured idea to generate queries)
 - F-03: Idea Analysis Choice Page (user navigation) - REQUIRED
-- S-03: Database Schema (research_snapshots table)
+- S-03: Database Schema (research_snapshots table with research_type field)
 - S-04: LLM Integration (Prompt B for query generation)
 - S-05: Search & Research Integration (AI Builders Search API)
 
 **Used By**:
 - F-04: MVTA Red Team Simulation (optionally consumes research snapshot)
 
-**Navigation**:
-- Entry: User clicks "Research Online" on Choice Page (F-03)
-- Exit: After completion, returns to Choice Page (F-03), not auto-navigates to MVTA
+**Navigation Flow**:
+- Entry: User clicks "Online Research" on Choice Page (F-03) → navigates to Research Type Selection page
+- Type Selection: User selects one of three research types (Competitor, Community, Regulatory)
+- Execution: System runs research for selected type only
+- Exit: After completion, returns to Choice Page (F-03)
+- Re-entry: User can select different types for the same idea (multiple independent research runs)
 
 **Implementation Status**:
 - [ ] PRD documented
@@ -62,79 +65,130 @@
 
 ### Overview
 
-The Research Engine is the intelligence-gathering phase of MVTA analysis. After a founder's idea is structured (F-02), this feature:
-1. **Generates research queries** using LLM (Prompt B)
-2. **Executes web searches** via AI Builders Search API
-3. **Fetches evidence** from competitors, community discussions, and regulatory sources
-4. **Synthesizes results** into structured research snapshot
-5. **Stores snapshot** for use in red team analysis (F-04)
+The Research Engine is the intelligence-gathering phase of MVTA analysis. After a founder's idea is structured (F-02), this feature allows users to conduct **targeted research** by selecting one of three research types:
 
-**Target Duration**: 2-5 minutes (depending on query count and API latency)
+1. **🏢 Competitor Research** - Analyze existing solutions, pricing, strengths/weaknesses
+2. **👥 Community Voice** - Listen to user discussions on Reddit, forums, social media
+3. **📋 Regulatory Research** - Identify compliance requirements and legal considerations
+
+**New Multi-Type Architecture**:
+- Users can run **one research type at a time**
+- Each type produces an independent research snapshot
+- Users can run **multiple types for the same idea** (e.g., Competitor first, then Community)
+- Completed research can be viewed again without re-running
+
+**Research Flow**:
+1. **Type Selection** (new): User chooses research type on `/analyze/[sessionId]/research-choice`
+2. **Query Generation**: LLM generates queries for selected type only
+3. **Execution**: Web searches via AI Builders Search API
+4. **Synthesis**: Results structured into type-specific snapshot
+5. **Storage**: Snapshot saved with research_type field
+6. **Navigation**: Returns to Choice Page (F-03)
+
+**Target Duration**: 1-3 minutes per research type (shorter than original full research)
 
 **Key Design Goals**:
-- **Transparency**: Show users what's being researched in real-time
+- **Focus**: Users get targeted intelligence for their chosen area
+- **Transparency**: Show queries and results in real-time
+- **Flexibility**: Run one type or all types, in any order
 - **Reliability**: Handle API failures gracefully (partial data OK)
-- **Quality**: Prioritize recent, relevant results
-- **Speed**: Parallelize searches where possible
+- **Speed**: Parallelize searches within selected type
 
 ---
 
 ### User Flow
 
-**Step 1**: User completes intake form and navigates to Choice Page (F-03)
-- User: Clicks "Start Research" button from Choice Page
-- System: Navigates to `/analyze/[session_id]/research`, keeps session status as 'choice'
+**NEW Step 1: Research Type Selection**
+- User: Completes intake form, navigates to Choice Page (F-03)
+- User: Clicks "Online Research" button from Choice Page
+- System: Navigates to `/analyze/[sessionId]/research-choice`
+- User: Sees three research type cards:
+  - 🏢 **Competitor Research** - "Analyze existing solutions and alternatives"
+  - 👥 **Community Voice** - "Listen to user discussions and feedback"
+  - 📋 **Regulatory Research** - "Identify compliance and legal requirements"
+- User: Sees status badges on each card:
+  - "Not Started" (clickable, starts research)
+  - "Completed ✓" (clickable, views results)
+- User: Clicks on one research type card
 
-**Step 2**: Query Generation Phase
-- User: Sees progress indicator: "Generating research queries..."
-- System: Calls LLM (Prompt B) with structured idea
-- System: Receives 3 query categories:
-  - competitor_queries (5-10 queries)
-  - community_queries (5-10 queries)
-  - regulatory_queries (0-5 queries, only if domain is sensitive)
+**Step 2: Research Execution** (if "Not Started")
+- System: Navigates to `/analyze/[sessionId]/research?type=competitor` (or community/regulatory)
+- User: Sees progress: "Generating competitor research queries..."
+- System: Calls LLM (Prompt B) with structured idea + research type
+- System: Receives queries for selected type only (5-10 queries)
+- User: Sees query topics displayed (e.g., "Searching: AI-powered market validation tools")
 
-**Step 3**: Competitor Research
-- User: Sees progress: "Searching for competitors... (Query 1 of 7)"
-- System: Executes competitor queries in parallel via AI Builders Search API
-- System: Synthesizes results into competitor profiles using LLM
-- User: Sees competitor cards appear as results arrive
+**Step 3: Search Execution** (UPDATED - Simplified Progress)
+- User: Sees simplified progress indicator (3 steps):
+  1. "Generating targeted research queries..."
+  2. Type-specific step:
+     - Competitor: "Searching for competitors and alternatives..."
+     - Community: "Analyzing community discussions and reviews..."
+     - Regulatory: "Checking regulatory requirements..."
+  3. "Synthesizing findings with AI..."
+- System: Executes queries in parallel via AI Builders Search API
+- System: Synthesizes results using LLM
+- **Note**: MVP shows simplified progress; full version will show real-time cards
 
-**Step 4**: Community Listening
-- User: Sees progress: "Listening to community discussions... (Query 1 of 8)"
-- System: Executes community queries (focus on Reddit, forums, reviews)
-- System: Classifies sentiment and extracts themes using LLM
-- User: Sees community signal cards appear
+**Step 4: Research Complete** (UPDATED - Auto-navigation)
+- System: Saves research snapshot with research_type field
+- System: Updates completion tracking (stores research_type in session metadata)
+- System: **Automatically navigates** to results page (no user action needed)
+- System: Navigates to `/analyze/[sessionId]/research/[type]` (e.g., `/research/competitor`)
 
-**Step 5**: Regulatory Context (if applicable)
-- User: Sees progress: "Checking regulatory context..."
-- System: Executes regulatory queries
-- System: Synthesizes compliance requirements
-- User: Sees regulatory signals (or "No regulatory concerns identified")
+**Step 5: View Results**
+- **If just completed**: User automatically lands on results page
+- **If previously completed**: User clicks completed research type card from research-choice page
+- System: Navigates to dynamic results page: `/analyze/[sessionId]/research/[type]`
+  - Examples: `/research/competitor`, `/research/community`, `/research/regulatory`
+- User: Views research results with type-specific cards
+- User: Can click "Back to Research Types" or "Back to Choice Page"
 
-**Step 6**: Research Complete
-- User: Sees summary:
-  - "Found 5 competitors"
-  - "Analyzed 12 community discussions"
-  - "Identified 2 regulatory considerations"
-- System: Saves complete research snapshot to database
-- System: Sets research_completed flag to true (keeps status as 'choice')
-- User: Clicks "Back to Choice Page" button
-- System: Navigates to `/analyze/[session_id]/choice` (F-03)
+**Repeat**: User can return to research-choice page and select different types
 
 ---
 
 ### UI Components
 
-**Component 1: ResearchProgress**
-- **Location**: `/analyze/[session_id]/research` route
-- **Purpose**: Show real-time research progress
+**NEW Component 1: ResearchTypeSelection**
+- **Location**: `/analyze/[sessionId]/research-choice` route
+- **Purpose**: Let users select which research type to run
 - **Elements**:
-  - Progress bar (0-100%)
-  - Current stage label ("Generating queries", "Searching competitors", etc.)
-  - Live result cards appearing as data arrives
-  - Time estimate ("~3 minutes remaining")
+  - Page title: "Choose Research Type"
+  - Subtitle: "Select the type of research you want to conduct for your idea"
+  - Three research type cards (grid layout):
+    - **Competitor Research Card**
+      - Icon: 🏢
+      - Title: "Competitor Research"
+      - Description: "Analyze existing solutions, pricing strategies, and competitive landscape"
+      - Status badge: "Not Started" / "Completed ✓"
+      - Button: "Start Research" / "View Results"
+    - **Community Voice Card**
+      - Icon: 👥
+      - Title: "Community Voice"
+      - Description: "Listen to user discussions on Reddit, forums, and social media"
+      - Status badge: "Not Started" / "Completed ✓"
+      - Button: "Start Research" / "View Results"
+    - **Regulatory Research Card**
+      - Icon: 📋
+      - Title: "Regulatory Research"
+      - Description: "Identify compliance requirements and legal considerations"
+      - Status badge: "Not Started" / "Completed ✓"
+      - Button: "Start Research" / "View Results"
+  - "Back to Choice Page" button at bottom
 
-**Component 2: CompetitorCard**
+**Component 2: ResearchProgress** (UPDATED)
+- **Location**: `/analyze/[sessionId]/research?type=competitor` (or community/regulatory)
+- **Purpose**: Show real-time research progress for selected type
+- **NEW Elements**:
+  - Research type indicator (e.g., "🏢 Competitor Research")
+  - Query topics display (show what's being searched)
+  - Progress bar (0-100%)
+  - Current stage label ("Generating queries", "Searching...", etc.)
+  - Live result cards appearing as data arrives (type-specific)
+  - "Back to Choice Page" button (when complete)
+
+**Component 3: CompetitorCard**
 - **Location**: Research results section
 - **Purpose**: Display one competitor profile
 - **Elements**:
@@ -166,33 +220,76 @@ The Research Engine is the intelligence-gathering phase of MVTA analysis. After 
   - Penalties description
   - Applicability context
 
+**NEW Component 5: ResearchResultsView** (UPDATED - Dynamic Route)
+- **Location**: `/analyze/[sessionId]/research/[type]` (single dynamic route)
+  - Examples: `/research/competitor`, `/research/community`, `/research/regulatory`
+- **Purpose**: Display completed research for specific type (universal component for all types)
+- **Elements**:
+  - Research type header (dynamic: `{icon} {label}`)
+  - Query topics used (collapsible details section)
+  - Results grid (renders type-specific cards based on `type` parameter):
+    - **Competitor**: CompetitorCard (name, URL, pricing, strengths/weaknesses)
+    - **Community**: CommunitySignalCard (source, sentiment, themes, quotes)
+    - **Regulatory**: RegulatorySignalCard (regulation name, requirements, penalties)
+  - Summary stats (e.g., "5 results found")
+  - "Back to Research Types" button → `/research-choice`
+  - "Back to Choice Page" button → `/choice`
+- **Future extensibility**: GenericCard fallback for new types (displays JSON)
+
 ---
 
 ### Business Rules
 
-1. **Query Generation**: LLM generates 10-25 total queries (5-10 competitor, 5-10 community, 0-5 regulatory)
-2. **Parallel Execution**: Queries within same category run in parallel (max 5 concurrent requests)
-3. **Result Limits**: Max 10 results per query
-4. **Deduplication**: Results from same domain are deduplicated (keep highest relevance)
-5. **Graceful Degradation**: If search API fails, continue with empty results (don't block analysis)
-6. **Timeout**: Individual query timeout = 30 seconds; total research timeout = 5 minutes
-7. **Synthesis**: LLM synthesizes raw results into structured profiles (competitors, signals, regulations)
+1. **Research Type Selection**: User must select one of three types (competitor, community, regulatory)
+2. **Query Generation**: LLM generates 5-10 queries for **selected type only**
+3. **Parallel Execution**: Queries run in parallel (max 5 concurrent requests)
+4. **Result Limits**: Max 10 results per query
+5. **Deduplication**: Results from same domain are deduplicated (keep highest relevance)
+6. **Graceful Degradation**: If search API fails, continue with empty results (don't block analysis)
+7. **Timeout**: Individual query timeout = 30 seconds; total research timeout = 3 minutes (per type)
+8. **Synthesis**: LLM synthesizes raw results into type-specific structured data
+9. **Multiple Research Runs**: Same session can have multiple research snapshots (one per type)
+10. **Completion Tracking**: Session metadata tracks which research types have been completed
+11. **View vs Re-run**: Clicking completed type shows results; re-run feature deferred to future
+12. **Query Display**: Show query topics to users during execution for transparency
 
 ---
 
 ### Acceptance Criteria
 
-- [ ] System generates research queries from structured idea
+**Research Type Selection**:
+- [ ] Research-choice page displays three research type cards
+- [ ] Each card shows correct icon, title, description
+- [ ] Status badges show "Not Started" or "Completed ✓" correctly
+- [ ] Button text changes based on completion state ("Start Research" vs "View Results")
+- [ ] Clicking on card navigates to correct route
+
+**Research Execution**:
+- [ ] System generates queries for **selected type only**
+- [ ] Query topics are displayed to user during execution
 - [ ] Queries are executed via AI Builders Search API
 - [ ] Results are fetched and deduplicated
-- [ ] Competitor profiles are synthesized with LLM
-- [ ] Community signals are classified with sentiment and themes
-- [ ] Regulatory signals are extracted (if applicable)
-- [ ] Research snapshot is saved to database
+- [ ] Type-specific synthesis:
+  - [ ] Competitor: profiles with pricing, strengths, weaknesses
+  - [ ] Community: signals with sentiment and themes
+  - [ ] Regulatory: requirements with compliance details
+- [ ] Research snapshot saved with research_type field
 - [ ] User sees real-time progress during research
-- [ ] Partial results are acceptable (if some queries fail)
-- [ ] Research completes within 5 minutes
-- [ ] "Proceed to Analysis" button navigates correctly
+- [ ] Partial results acceptable (if some queries fail)
+- [ ] Research completes within 3 minutes (per type)
+
+**Multi-Type Support**:
+- [ ] Same session can have multiple research snapshots (different types)
+- [ ] Database enforces UNIQUE(session_id, research_type)
+- [ ] Completion status tracked per type
+- [ ] User can run multiple types in any order
+
+**Results Viewing**:
+- [ ] Completed research navigates to type-specific results page
+- [ ] Results page displays queries used
+- [ ] Results page shows type-specific cards
+- [ ] "Back to Choice Page" button works correctly
+- [ ] Re-run feature deferred (clicking completed type shows results only)
 
 ---
 
@@ -200,19 +297,38 @@ The Research Engine is the intelligence-gathering phase of MVTA analysis. After 
 
 ### API Endpoints
 
-**Endpoint 1: POST /api/sessions/[sessionId]/research**
+**NEW Endpoint 1: GET /api/sessions/[sessionId]/research/status**
 
-**Purpose**: Initiate research phase (generate queries, execute searches, synthesize results)
+**Purpose**: Get completion status of all research types
 
-**Request**: No body required
+**Response** (Success - 200):
+```typescript
+interface ResearchStatusResponse {
+  completed_types: ('competitor' | 'community' | 'regulatory')[];
+  available_types: {
+    competitor: { completed: boolean; snapshot_id?: string };
+    community: { completed: boolean; snapshot_id?: string };
+    regulatory: { completed: boolean; snapshot_id?: string };
+  };
+}
+```
+
+**UPDATED Endpoint 2: POST /api/sessions/[sessionId]/research**
+
+**Purpose**: Initiate research for **specific type** (generate queries, execute searches, synthesize results)
+
+**Request Query Parameters**:
+- `type`: Required, one of 'competitor' | 'community' | 'regulatory'
+
+**Example**: `POST /api/sessions/[sessionId]/research?type=competitor`
 
 **Response** (Success - 201):
 ```typescript
 interface ResearchResponse {
   research_snapshot_id: string;
-  competitors_found: number;
-  community_signals_found: number;
-  regulatory_signals_found: number;
+  research_type: 'competitor' | 'community' | 'regulatory';
+  results_count: number; // e.g., competitors_found, signals_found, etc.
+  queries: string[]; // Query topics for transparency
 }
 ```
 
@@ -220,6 +336,8 @@ interface ResearchResponse {
 - `SESSION_NOT_FOUND`: Session ID invalid
 - `IDEA_NOT_FOUND`: No structured idea exists for this session
 - `RESEARCH_FAILED`: All research queries failed
+- `INVALID_TYPE`: Research type parameter missing or invalid
+- `ALREADY_COMPLETED`: Research type already completed for this session (409 Conflict)
 
 **Implementation**:
 ```typescript
@@ -298,70 +416,107 @@ export async function POST(
 
 ---
 
-**Endpoint 2: GET /api/sessions/[sessionId]/research/progress**
+**NEW Endpoint 3: GET /api/sessions/[sessionId]/research/[type]**
+
+**Purpose**: Fetch completed research snapshot for specific type
+
+**URL Parameters**:
+- `type`: One of 'competitor' | 'community' | 'regulatory'
+
+**Example**: `GET /api/sessions/[sessionId]/research/competitor`
+
+**Response** (Success - 200):
+```typescript
+interface ResearchSnapshotResponse {
+  research_snapshot_id: string;
+  research_type: 'competitor' | 'community' | 'regulatory';
+  queries: string[];
+  results: CompetitorResult[] | CommunitySignal[] | RegulatorySignal[];
+  created_at: string;
+}
+```
+
+**Error Codes**:
+- `SESSION_NOT_FOUND`: Session ID invalid
+- `RESEARCH_NOT_FOUND`: No research completed for this type (404)
+
+**Endpoint 4: GET /api/sessions/[sessionId]/research/progress** (Optional)
 
 **Purpose**: Stream real-time research progress (SSE - Server-Sent Events)
+
+**Query Parameters**:
+- `type`: Required, research type being executed
 
 **Response Format**:
 ```typescript
 // SSE event stream
-data: {"stage": "generating_queries", "progress": 10}
+data: {"stage": "generating_queries", "progress": 10, "type": "competitor"}
 
-data: {"stage": "searching_competitors", "progress": 30, "message": "Query 3 of 7"}
+data: {"stage": "searching", "progress": 30, "message": "Query 3 of 7", "query_topic": "AI market validation tools"}
 
-data: {"stage": "searching_community", "progress": 60, "message": "Query 5 of 8"}
-
-data: {"stage": "complete", "progress": 100}
+data: {"stage": "complete", "progress": 100, "results_count": 5}
 ```
 
-**Implementation** (Optional for MVP - can use polling instead):
-```typescript
-// app/api/sessions/[sessionId]/research/progress/route.ts
-export async function GET(
-  request: Request,
-  { params }: { params: { sessionId: string } }
-) {
-  const encoder = new TextEncoder();
-
-  const stream = new ReadableStream({
-    async start(controller) {
-      // Poll session status and send updates
-      // (Full SSE implementation details omitted for brevity)
-    }
-  });
-
-  return new Response(stream, {
-    headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive'
-    }
-  });
-}
-```
+**Implementation**: (Optional for MVP - can use polling instead)
 
 ---
 
 ### Database Schema
 
-**Table: research_snapshots** (from S-03)
+**UPDATED Table: research_snapshots** (from S-03)
 ```sql
 CREATE TABLE research_snapshots (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  session_id UUID NOT NULL UNIQUE REFERENCES sessions(id) ON DELETE CASCADE,
+  session_id UUID NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+  research_type TEXT NOT NULL,  -- No CHECK constraint for future extensibility
 
-  -- Generated queries
-  competitor_queries JSONB DEFAULT '[]'::jsonb,
-  community_queries JSONB DEFAULT '[]'::jsonb,
-  regulatory_queries JSONB DEFAULT '[]'::jsonb,
+  -- Generated queries (only for selected type)
+  queries JSONB DEFAULT '[]'::jsonb,
 
-  -- Fetched results
-  competitors JSONB DEFAULT '[]'::jsonb,
-  community_signals JSONB DEFAULT '[]'::jsonb,
-  regulatory_signals JSONB DEFAULT '[]'::jsonb,
+  -- Fetched results (structure depends on research_type)
+  results JSONB DEFAULT '[]'::jsonb,
 
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+
+  -- Composite unique constraint: one snapshot per type per session
+  UNIQUE (session_id, research_type)
 );
+
+CREATE INDEX idx_research_snapshots_session ON research_snapshots(session_id);
+CREATE INDEX idx_research_snapshots_type ON research_snapshots(research_type);
+```
+
+**Schema Rationale**:
+- **research_type**: Identifies which type of research was conducted
+  - **No CHECK constraint**: Validation done at application layer for future extensibility
+  - **Current valid types**: 'competitor', 'community', 'regulatory' (enforced in code)
+  - **Future extensibility**: Adding new types requires only code changes, no DB migration
+- **queries**: Stores only the queries for selected type (simpler than three separate fields)
+- **results**: JSONB structure depends on type:
+  - `competitor`: Array of CompetitorResult objects
+  - `community`: Array of CommunitySignal objects
+  - `regulatory`: Array of RegulatorySignal objects
+- **UNIQUE constraint**: Ensures one snapshot per (session_id, research_type) pair
+- **Removed session_id UNIQUE**: Now allows multiple research snapshots per session
+
+**Application-Layer Validation**:
+```typescript
+// lib/constants/research.ts
+export const RESEARCH_TYPES = ['competitor', 'community', 'regulatory'] as const;
+export type ResearchType = typeof RESEARCH_TYPES[number];
+
+// Validate in API handlers
+export function isValidResearchType(type: string): type is ResearchType {
+  return RESEARCH_TYPES.includes(type as ResearchType);
+}
+```
+
+**Session Metadata** (OPTIONAL - for quick lookup):
+```typescript
+// Can add to sessions table metadata field:
+metadata: {
+  research_completed_types: ['competitor', 'community'] // Array of completed types
+}
 ```
 
 ---
