@@ -1,7 +1,7 @@
 # S-05: Search & Research Integration
 
-**Version**: 1.0
-**Last Updated**: 2025-12-08
+**Version**: 2.0
+**Last Updated**: 2025-12-14
 **Status**: ✅ Spec Complete
 
 ---
@@ -164,30 +164,68 @@ export async function searchWithRetry(
 import { search } from './client';
 import { generateResearchQueries } from '@/lib/llm/prompts';
 
-interface ResearchSnapshot {
-  competitors: CompetitorResult[];
-  community_signals: CommunitySignal[];
-  regulatory_signals: RegulatorySignal[];
+// Generic research result type (database-aligned)
+interface ResearchResult<T extends string, R> {
+  research_type: T;
+  queries: string[];
+  results: R[];
 }
 
-export async function conductResearch(ideaSchema: StructuredIdea): Promise<ResearchSnapshot> {
-  // Step 1: Generate queries using LLM
-  const queries = await generateResearchQueries(ideaSchema);
+// Type-specific research results
+type CompetitorResearch = ResearchResult<'competitor', Competitor>;
+type CommunityResearch = ResearchResult<'community', CommunitySignal>;
+type RegulatoryResearch = ResearchResult<'regulatory', RegulatorySignal>;
 
-  // Step 2: Execute competitor searches
-  const competitorResults = await executeCompetitorResearch(queries.competitor_queries);
+// Union type for all research types
+type TypedResearchResult =
+  | CompetitorResearch
+  | CommunityResearch
+  | RegulatoryResearch;
 
-  // Step 3: Execute community searches
-  const communityResults = await executeCommunityResearch(queries.community_queries);
+// Function overloads for type safety
+export async function conductResearch(
+  ideaSchema: StructuredIdea,
+  type: 'competitor'
+): Promise<CompetitorResearch>;
 
-  // Step 4: Execute regulatory searches (if applicable)
-  const regulatoryResults = await executeRegulatoryResearch(queries.regulatory_queries);
+export async function conductResearch(
+  ideaSchema: StructuredIdea,
+  type: 'community'
+): Promise<CommunityResearch>;
 
+export async function conductResearch(
+  ideaSchema: StructuredIdea,
+  type: 'regulatory'
+): Promise<RegulatoryResearch>;
+
+// Implementation
+export async function conductResearch(
+  ideaSchema: StructuredIdea,
+  type: 'competitor' | 'community' | 'regulatory'
+): Promise<TypedResearchResult> {
+  // Step 1: Generate queries using LLM (type-specific)
+  const queries = await generateResearchQueries(ideaSchema, type);
+
+  // Step 2: Execute searches for selected type only
+  let results;
+  switch (type) {
+    case 'competitor':
+      results = await executeCompetitorResearch(queries);
+      break;
+    case 'community':
+      results = await executeCommunityResearch(queries);
+      break;
+    case 'regulatory':
+      results = await executeRegulatoryResearch(queries);
+      break;
+  }
+
+  // Step 3: Return type-specific research result
   return {
-    competitors: competitorResults,
-    community_signals: communityResults,
-    regulatory_signals: regulatoryResults
-  };
+    research_type: type,
+    queries: queries,
+    results: results
+  } as TypedResearchResult;
 }
 ```
 
@@ -517,8 +555,9 @@ interface ResearchProgress {
 
 export async function conductResearchWithProgress(
   ideaSchema: StructuredIdea,
+  type: 'competitor' | 'community' | 'regulatory',
   onProgress: (progress: ResearchProgress) => void
-): Promise<ResearchSnapshot> {
+): Promise<TypedResearchResult> {
   onProgress({
     stage: ResearchStage.GENERATING_QUERIES,
     message: 'Generating research queries...',
@@ -583,48 +622,41 @@ export async function conductResearchWithProgress(
 
 ```typescript
 export async function conductResearchSafe(
-  ideaSchema: StructuredIdea
-): Promise<ResearchSnapshot> {
-  let competitors: CompetitorResult[] = [];
-  let communitySignals: CommunitySignal[] = [];
-  let regulatorySignals: RegulatorySignal[] = [];
+  ideaSchema: StructuredIdea,
+  type: 'competitor' | 'community' | 'regulatory'
+): Promise<TypedResearchResult> {
+  let results: any[] = [];
 
   try {
-    const queries = await generateResearchQueries(ideaSchema);
+    const queries = await generateResearchQueries(ideaSchema, type);
 
-    // Try competitor research (most important)
+    // Try research for selected type
     try {
-      competitors = await executeCompetitorResearch(queries.competitor_queries);
+      switch (type) {
+        case 'competitor':
+          results = await executeCompetitorResearch(queries);
+          break;
+        case 'community':
+          results = await executeCommunityResearch(queries);
+          break;
+        case 'regulatory':
+          results = await executeRegulatoryResearch(queries);
+          break;
+      }
     } catch (error) {
-      console.error('Competitor research failed:', error);
-      // Continue with empty competitors
-    }
-
-    // Try community research
-    try {
-      communitySignals = await executeCommunityResearch(queries.community_queries);
-    } catch (error) {
-      console.error('Community research failed:', error);
-      // Continue with empty community signals
-    }
-
-    // Try regulatory research
-    try {
-      regulatorySignals = await executeRegulatoryResearch(queries.regulatory_queries);
-    } catch (error) {
-      console.error('Regulatory research failed:', error);
-      // Continue with empty regulatory signals
+      console.error(`${type} research failed:`, error);
+      // Continue with empty results
     }
   } catch (error) {
     console.error('Research query generation failed:', error);
-    // Proceed with all empty (MVTA analysis will note lack of evidence)
+    // Proceed with empty results (MVTA analysis will note lack of evidence)
   }
 
   return {
-    competitors,
-    community_signals: communitySignals,
-    regulatory_signals: regulatorySignals
-  };
+    research_type: type,
+    queries: [],
+    results: results
+  } as TypedResearchResult;
 }
 ```
 
@@ -643,13 +675,17 @@ export async function conductResearchSafe(
 
 interface CachedResearch {
   ideaHash: string; // Hash of structured_idea
-  snapshot: ResearchSnapshot;
+  research_type: string; // Type of research cached
+  snapshot: TypedResearchResult;
   createdAt: Date;
 }
 
-async function getCachedResearch(ideaSchema: StructuredIdea): Promise<ResearchSnapshot | null> {
+async function getCachedResearch(
+  ideaSchema: StructuredIdea,
+  type: string
+): Promise<TypedResearchResult | null> {
   const hash = hashIdeaSchema(ideaSchema);
-  // Check cache (Redis or database table)
+  // Check cache (Redis or database table) for matching ideaHash + research_type
   // If found and < 7 days old, return cached snapshot
   return null; // Not implemented in MVP
 }

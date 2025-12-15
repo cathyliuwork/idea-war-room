@@ -98,19 +98,60 @@ export const RegulatorySignalSchema = z.object({
   applicability: z.string(),
 });
 
-export const ResearchSnapshotSchema = z.object({
-  competitor_queries: z.array(z.string()),
-  community_queries: z.array(z.string()),
-  regulatory_queries: z.array(z.string()),
-  competitors: z.array(CompetitorSchema),
-  community_signals: z.array(CommunitySignalSchema),
-  regulatory_signals: z.array(RegulatorySignalSchema),
-});
-
 export type Competitor = z.infer<typeof CompetitorSchema>;
 export type CommunitySignal = z.infer<typeof CommunitySignalSchema>;
 export type RegulatorySignal = z.infer<typeof RegulatorySignalSchema>;
-export type ResearchSnapshot = z.infer<typeof ResearchSnapshotSchema>;
+
+// ============================================================================
+// NEW: Generic Research Type System (Flexible, Database-Aligned)
+// ============================================================================
+
+/**
+ * Generic research result for a specific research type
+ * @template T - Research type literal (e.g., 'competitor', 'community')
+ * @template R - Result schema type (e.g., Competitor, CommunitySignal)
+ */
+export interface ResearchResult<T extends string, R> {
+  research_type: T;
+  queries: string[];
+  results: R[];
+}
+
+// Type-specific research result types
+export type CompetitorResearch = ResearchResult<'competitor', Competitor>;
+export type CommunityResearch = ResearchResult<'community', CommunitySignal>;
+export type RegulatoryResearch = ResearchResult<'regulatory', RegulatorySignal>;
+
+// Union type for all current research types
+export type TypedResearchResult =
+  | CompetitorResearch
+  | CommunityResearch
+  | RegulatoryResearch;
+
+// Zod schemas for runtime validation
+export const CompetitorResearchSchema = z.object({
+  research_type: z.literal('competitor'),
+  queries: z.array(z.string()),
+  results: z.array(CompetitorSchema),
+});
+
+export const CommunityResearchSchema = z.object({
+  research_type: z.literal('community'),
+  queries: z.array(z.string()),
+  results: z.array(CommunitySignalSchema),
+});
+
+export const RegulatoryResearchSchema = z.object({
+  research_type: z.literal('regulatory'),
+  queries: z.array(z.string()),
+  results: z.array(RegulatorySignalSchema),
+});
+
+export const TypedResearchResultSchema = z.discriminatedUnion('research_type', [
+  CompetitorResearchSchema,
+  CommunityResearchSchema,
+  RegulatoryResearchSchema,
+]);
 
 /**
  * MVTA Damage Report Schemas (Output from F-04 Red Team Analysis)

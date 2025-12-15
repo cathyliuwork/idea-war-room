@@ -1,5 +1,11 @@
 import { callLLMWithRetry } from '../client';
-import type { StructuredIdea, Competitor, CommunitySignal, RegulatorySignal, MVTAReport } from '@/lib/validation/schemas';
+import type {
+  StructuredIdea,
+  MVTAReport,
+  CompetitorResearch,
+  CommunityResearch,
+  RegulatoryResearch,
+} from '@/lib/validation/schemas';
 import { MVTAReportSchema } from '@/lib/validation/schemas';
 
 /**
@@ -101,11 +107,15 @@ Rules:
 - Be ruthless but fair - focus on REAL risks, not hypothetical
 - Provide 5-10 actionable recommendations`;
 
-interface ResearchContext {
-  competitors: Competitor[];
-  community_signals: CommunitySignal[];
-  regulatory_signals: RegulatorySignal[];
-}
+/**
+ * Research context for MVTA analysis (optional, flexible)
+ * Supports partial research - any combination of research types can be provided
+ */
+type ResearchContext = {
+  competitor?: CompetitorResearch;
+  community?: CommunityResearch;
+  regulatory?: RegulatoryResearch;
+};
 
 /**
  * Run MVTA Red Team Analysis

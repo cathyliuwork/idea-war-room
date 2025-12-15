@@ -9,7 +9,13 @@ import {
   synthesizeCommunitySignals,
   synthesizeRegulatorySignals,
 } from '../llm/prompts/synthesize-research';
-import type { StructuredIdea, ResearchSnapshot } from '@/lib/validation/schemas';
+import type {
+  StructuredIdea,
+  CompetitorResearch,
+  CommunityResearch,
+  RegulatoryResearch,
+  TypedResearchResult,
+} from '@/lib/validation/schemas';
 
 /**
  * Research Engine
@@ -21,18 +27,46 @@ import type { StructuredIdea, ResearchSnapshot } from '@/lib/validation/schemas'
  * 4. Return research snapshot for MVTA analysis
  */
 
+// ============================================================================
+// Function Overloads for Type-Safe Research
+// ============================================================================
+
 /**
- * Conduct complete research for a structured idea
+ * Conduct competitor research only
+ */
+export async function conductResearch(
+  structuredIdea: StructuredIdea,
+  type: 'competitor'
+): Promise<CompetitorResearch>;
+
+/**
+ * Conduct community research only
+ */
+export async function conductResearch(
+  structuredIdea: StructuredIdea,
+  type: 'community'
+): Promise<CommunityResearch>;
+
+/**
+ * Conduct regulatory research only
+ */
+export async function conductResearch(
+  structuredIdea: StructuredIdea,
+  type: 'regulatory'
+): Promise<RegulatoryResearch>;
+
+/**
+ * Implementation signature - type parameter is required
  *
  * @param structuredIdea - Structured idea from Prompt A
- * @param type - Optional research type to execute (competitor, community, or regulatory). If not provided, executes all types.
- * @returns Research snapshot with competitors, community signals, regulatory signals
+ * @param type - Research type to execute (competitor, community, or regulatory)
+ * @returns Type-specific research result
  * @throws Error if critical steps fail
  */
 export async function conductResearch(
   structuredIdea: StructuredIdea,
-  type?: 'competitor' | 'community' | 'regulatory'
-): Promise<ResearchSnapshot> {
+  type: 'competitor' | 'community' | 'regulatory'
+): Promise<TypedResearchResult> {
   console.log('🔬 Starting research phase...');
 
   try {
@@ -77,10 +111,10 @@ export async function conductResearch(
   - Regulatory: ${regulatory_queries.length}`);
     }
 
-    // Determine which research types to execute
-    const shouldRunCompetitor = !type || type === 'competitor';
-    const shouldRunCommunity = !type || type === 'community';
-    const shouldRunRegulatory = !type || type === 'regulatory';
+    // Determine which research type to execute (type is now required)
+    const shouldRunCompetitor = type === 'competitor';
+    const shouldRunCommunity = type === 'community';
+    const shouldRunRegulatory = type === 'regulatory';
 
     // Initialize result variables
     let competitorResults: SearchResponse = { queries: [], combined_answer: null, errors: null };
@@ -178,22 +212,32 @@ export async function conductResearch(
       }
     }
 
-    // Step 8: Return complete research snapshot
-    const snapshot: ResearchSnapshot = {
-      competitor_queries,
-      community_queries,
-      regulatory_queries,
-      competitors,
-      community_signals: communitySignals,
-      regulatory_signals: regulatorySignals,
-    };
+    // Step 8: Return type-specific research result
+    switch (type) {
+      case 'competitor':
+        console.log(`🎉 Competitor research complete! Found ${competitors.length} competitors`);
+        return {
+          research_type: 'competitor' as const,
+          queries: competitor_queries,
+          results: competitors,
+        } satisfies CompetitorResearch;
 
-    console.log(`🎉 Research complete!
-  - Competitors: ${competitors.length}
-  - Community Signals: ${communitySignals.length}
-  - Regulatory Signals: ${regulatorySignals.length}`);
+      case 'community':
+        console.log(`🎉 Community research complete! Found ${communitySignals.length} signals`);
+        return {
+          research_type: 'community' as const,
+          queries: community_queries,
+          results: communitySignals,
+        } satisfies CommunityResearch;
 
-    return snapshot;
+      case 'regulatory':
+        console.log(`🎉 Regulatory research complete! Found ${regulatorySignals.length} signals`);
+        return {
+          research_type: 'regulatory' as const,
+          queries: regulatory_queries,
+          results: regulatorySignals,
+        } satisfies RegulatoryResearch;
+    }
   } catch (error) {
     console.error('❌ Research failed:', error);
     throw new Error(`Research engine failed: ${(error as Error).message}`);

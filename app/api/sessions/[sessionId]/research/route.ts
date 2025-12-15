@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAuthenticatedSupabaseClient } from '@/lib/auth/middleware';
 import { conductResearch } from '@/lib/search/research-engine';
 import { isValidResearchType, ResearchType } from '@/lib/constants/research';
+import type { TypedResearchResult } from '@/lib/validation/schemas';
 
 /**
  * Research API Endpoint (UPDATED for multi-type support)
@@ -62,35 +63,20 @@ export async function POST(
 
     // 2. Conduct research (only the requested type)
     console.log(`Starting ${type} research for session ${params.sessionId}...`);
-    const researchSnapshot = await conductResearch(idea.structured_idea, type);
+    // Type assertion needed because TypeScript can't resolve overloads with union types
+    const researchResult = await conductResearch(idea.structured_idea, type as any);
 
-    // 3. Extract type-specific data
-    let queries: string[] = [];
-    let results: any[] = [];
+    // Phase 2: Use typed result directly (no need to extract from old format)
+    const typedResult = researchResult as TypedResearchResult;
 
-    switch (type) {
-      case 'competitor':
-        queries = researchSnapshot.competitor_queries;
-        results = researchSnapshot.competitors;
-        break;
-      case 'community':
-        queries = researchSnapshot.community_queries;
-        results = researchSnapshot.community_signals;
-        break;
-      case 'regulatory':
-        queries = researchSnapshot.regulatory_queries;
-        results = researchSnapshot.regulatory_signals;
-        break;
-    }
-
-    // 4. Save research snapshot to database (NEW SCHEMA)
+    // 3. Save research snapshot to database
     const { data: snapshot, error: snapshotError } = await supabase
       .from('research_snapshots')
       .insert({
         session_id: params.sessionId,
-        research_type: type,
-        queries: queries,
-        results: results,
+        research_type: typedResult.research_type,
+        queries: typedResult.queries,
+        results: typedResult.results,
       })
       .select('id')
       .single();
@@ -99,7 +85,7 @@ export async function POST(
       throw new Error(`Failed to save research: ${snapshotError.message}`);
     }
 
-    // 5. Set research_completed flag (keep status as 'choice')
+    // 4. Set research_completed flag
     await supabase
       .from('sessions')
       .update({ research_completed: true })
@@ -107,12 +93,13 @@ export async function POST(
 
     console.log(`${type} research complete for session ${params.sessionId}`);
 
+    // 5. Return type-specific response
     return NextResponse.json(
       {
         research_snapshot_id: snapshot.id,
-        research_type: type,
-        results_count: results.length,
-        queries: queries,
+        research_type: typedResult.research_type,
+        results_count: typedResult.results.length,
+        queries: typedResult.queries,
       },
       { status: 201 }
     );

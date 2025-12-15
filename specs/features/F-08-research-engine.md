@@ -1,6 +1,6 @@
 # F-08: Research Engine
 
-**Version**: 2.1
+**Version**: 3.0
 **Last Updated**: 2025-12-14
 **Priority**: OPTIONAL
 **Status**: 🚧 Spec Updated (supports single-type research with optimized query generation)
@@ -346,6 +346,7 @@ import { conductResearch } from '@/lib/search/research-engine';
 import { createAuthenticatedSupabaseClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import type { ResearchType } from '@/lib/constants/research';
+import type { TypedResearchResult } from '@/lib/validation/schemas';
 
 export async function POST(
   request: Request,
@@ -398,35 +399,20 @@ export async function POST(
   try {
     // UPDATED: Pass type parameter to conductResearch
     // This enables type-specific query generation (50-60% token savings)
-    const researchSnapshot = await conductResearch(idea.structured_idea, type);
+    // Type assertion needed because TypeScript can't resolve overloads with union types
+    const researchResult = await conductResearch(idea.structured_idea, type as any);
 
-    // UPDATED: Extract type-specific data from snapshot
-    let queries: string[] = [];
-    let results: any[] = [];
-
-    switch (type) {
-      case 'competitor':
-        queries = researchSnapshot.competitor_queries;
-        results = researchSnapshot.competitors;
-        break;
-      case 'community':
-        queries = researchSnapshot.community_queries;
-        results = researchSnapshot.community_signals;
-        break;
-      case 'regulatory':
-        queries = researchSnapshot.regulatory_queries;
-        results = researchSnapshot.regulatory_signals;
-        break;
-    }
+    // Phase 3: Use typed result directly (no need to extract from old format)
+    const typedResult = researchResult as TypedResearchResult;
 
     // UPDATED: Save to database with new schema (research_type field)
     const { data: snapshot, error: snapshotError } = await supabase
       .from('research_snapshots')
       .insert({
         session_id: params.sessionId,
-        research_type: type,  // NEW: Type-specific field
-        queries: queries,     // NEW: Single query array
-        results: results,     // NEW: Single results array
+        research_type: typedResult.research_type,
+        queries: typedResult.queries,
+        results: typedResult.results,
       })
       .select('id')
       .single();
@@ -443,9 +429,9 @@ export async function POST(
 
     return NextResponse.json({
       research_snapshot_id: snapshot.id,
-      research_type: type,
-      results_count: results.length,
-      queries: queries
+      research_type: typedResult.research_type,
+      results_count: typedResult.results.length,
+      queries: typedResult.queries
     }, { status: 201 });
 
   } catch (error) {
@@ -472,11 +458,18 @@ export async function POST(
 
 **Response** (Success - 200):
 ```typescript
+// Internal structure uses TypedResearchResult
+type ResearchSnapshotResponse = TypedResearchResult & {
+  research_snapshot_id: string;
+  created_at: string;
+};
+
+// Equivalent expanded form:
 interface ResearchSnapshotResponse {
   research_snapshot_id: string;
   research_type: 'competitor' | 'community' | 'regulatory';
   queries: string[];
-  results: CompetitorResult[] | CommunitySignal[] | RegulatorySignal[];
+  results: Competitor[] | CommunitySignal[] | RegulatorySignal[];
   created_at: string;
 }
 ```
@@ -547,12 +540,30 @@ data: {"stage": "complete", "progress": 100, "results_count": 5}
 
 ```typescript
 // src/lib/search/research-engine.ts
+
+// Function overloads for type safety
 export async function conductResearch(
   structuredIdea: StructuredIdea,
-  type?: 'competitor' | 'community' | 'regulatory'
-): Promise<ResearchSnapshot> {
-  // Step 1: Generate queries (type-specific if type provided)
-  const queriesResult = await generateResearchQueries(structuredIdea, type);
+  type: 'competitor'
+): Promise<CompetitorResearch>;
+
+export async function conductResearch(
+  structuredIdea: StructuredIdea,
+  type: 'community'
+): Promise<CommunityResearch>;
+
+export async function conductResearch(
+  structuredIdea: StructuredIdea,
+  type: 'regulatory'
+): Promise<RegulatoryResearch>;
+
+// Implementation
+export async function conductResearch(
+  structuredIdea: StructuredIdea,
+  type: 'competitor' | 'community' | 'regulatory'
+): Promise<TypedResearchResult> {
+  // Step 1: Generate queries (type-specific)
+  const queriesResult = await generateResearchQueries(structuredIdea, type as any);
 
   // Step 2: Extract queries based on result type
   let competitor_queries: string[] = [];
@@ -572,19 +583,106 @@ export async function conductResearch(
         regulatory_queries = queriesResult.queries;
         break;
     }
-  } else {
-    // All types result
-    competitor_queries = queriesResult.competitor_queries;
-    community_queries = queriesResult.community_queries;
-    regulatory_queries = queriesResult.regulatory_queries;
   }
 
-  // Step 3-7: Execute searches and synthesis for selected type(s)
-  // ... (rest of implementation)
+  // Step 3: Determine which research type to execute (type is now required)
+  const shouldRunCompetitor = type === 'competitor';
+  const shouldRunCommunity = type === 'community';
+  const shouldRunRegulatory = type === 'regulatory';
+
+  // Step 4-7: Execute searches and synthesis for selected type only
+  // ...
+
+  // Step 8: Return type-specific research result
+  switch (type) {
+    case 'competitor':
+      return {
+        research_type: 'competitor' as const,
+        queries: competitor_queries,
+        results: competitors,
+      } satisfies CompetitorResearch;
+
+    case 'community':
+      return {
+        research_type: 'community' as const,
+        queries: community_queries,
+        results: communitySignals,
+      } satisfies CommunityResearch;
+
+    case 'regulatory':
+      return {
+        research_type: 'regulatory' as const,
+        queries: regulatory_queries,
+        results: regulatorySignals,
+      } satisfies RegulatoryResearch;
+  }
 }
 ```
 
 **See Also**: [S-04: LLM Integration - Prompt B](../system/S-04-llm-integration.md#prompt-b-generate-research-queries-updated---type-specific-support) for detailed prompt specifications.
+
+---
+
+### Type System Architecture
+
+**Generic Research Result Type**:
+
+The research engine uses a generic type system that aligns with the flexible database schema:
+
+```typescript
+// Generic research result interface
+interface ResearchResult<T extends string, R> {
+  research_type: T;
+  queries: string[];
+  results: R[];
+}
+
+// Type-specific implementations
+type CompetitorResearch = ResearchResult<'competitor', Competitor>;
+type CommunityResearch = ResearchResult<'community', CommunitySignal>;
+type RegulatoryResearch = ResearchResult<'regulatory', RegulatorySignal>;
+
+// Union type for all current research types
+type TypedResearchResult =
+  | CompetitorResearch
+  | CommunityResearch
+  | RegulatoryResearch;
+```
+
+**Benefits**:
+
+1. **Type Safety**: Return type is inferred from the `type` parameter at compile time
+   - `conductResearch(idea, 'competitor')` → returns `CompetitorResearch`
+   - TypeScript knows the exact structure of the result
+
+2. **Database Alignment**: Types match the per-type database storage schema exactly
+   - No impedance mismatch between TypeScript and database
+   - Direct mapping: `research_type`, `queries`, `results` fields
+
+3. **Extensibility**: New research types can be added without database migration
+   - Add new schema (e.g., `PricingSignalSchema`)
+   - Define new type (e.g., `type PricingResearch = ResearchResult<'pricing', PricingSignal>`)
+   - Add to union type (e.g., `TypedResearchResult | PricingResearch`)
+   - No SQL migration needed - database already supports arbitrary types
+
+**Runtime Validation**:
+
+```typescript
+import { z } from 'zod';
+
+// Zod schemas for runtime validation
+export const CompetitorResearchSchema = z.object({
+  research_type: z.literal('competitor'),
+  queries: z.array(z.string()),
+  results: z.array(CompetitorSchema),
+});
+
+export const TypedResearchResultSchema = z.discriminatedUnion('research_type', [
+  CompetitorResearchSchema,
+  CommunityResearchSchema,
+  RegulatoryResearchSchema,
+]);
+```
 
 ---
 
