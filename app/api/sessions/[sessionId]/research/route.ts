@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAuthenticatedSupabaseClient } from '@/lib/auth/middleware';
+import { verifySessionOwnership } from '@/lib/auth/session-ownership';
 import { conductResearch } from '@/lib/search/research-engine';
 import { isValidResearchType, ResearchType } from '@/lib/constants/research';
 import type { TypedResearchResult } from '@/lib/validation/schemas';
@@ -9,6 +10,8 @@ import type { TypedResearchResult } from '@/lib/validation/schemas';
  *
  * POST /api/sessions/[sessionId]/research?type=competitor|community|regulatory
  * Initiates research for specific type: generates queries, executes searches, synthesizes results
+ *
+ * SECURITY: Verifies session ownership before triggering research
  */
 
 export async function POST(
@@ -16,7 +19,21 @@ export async function POST(
   { params }: { params: { sessionId: string } }
 ) {
   try {
-    const { supabase } = await createAuthenticatedSupabaseClient();
+    const { supabase, user } = await createAuthenticatedSupabaseClient();
+
+    // CRITICAL: Verify user owns this session before triggering research
+    const { authorized, error: ownershipError } = await verifySessionOwnership(
+      supabase,
+      params.sessionId,
+      user.id
+    );
+
+    if (!authorized) {
+      return NextResponse.json(
+        { error: ownershipError || 'Session not found or access denied' },
+        { status: 404 }
+      );
+    }
 
     // Extract and validate research type from query params
     const searchParams = request.nextUrl.searchParams;

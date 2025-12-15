@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAuthenticatedSupabaseClient } from '@/lib/auth/middleware';
+import { verifySessionOwnership } from '@/lib/auth/session-ownership';
 
 /**
  * Damage Report API Endpoint
  *
  * GET /api/sessions/[sessionId]/report
  * Retrieves MVTA damage report for display
+ *
+ * SECURITY: Verifies session ownership before returning sensitive data
  */
 
 export async function GET(
@@ -13,7 +16,21 @@ export async function GET(
   { params }: { params: { sessionId: string } }
 ) {
   try {
-    const { supabase } = await createAuthenticatedSupabaseClient();
+    const { supabase, user } = await createAuthenticatedSupabaseClient();
+
+    // CRITICAL: Verify user owns this session before accessing report
+    const { authorized, error: ownershipError } = await verifySessionOwnership(
+      supabase,
+      params.sessionId,
+      user.id
+    );
+
+    if (!authorized) {
+      return NextResponse.json(
+        { error: ownershipError || 'Session not found or access denied' },
+        { status: 404 }
+      );
+    }
 
     // Fetch damage report
     const { data: report, error: reportError } = await supabase

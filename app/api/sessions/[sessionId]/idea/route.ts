@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAuthenticatedSupabaseClient } from '@/lib/auth/middleware';
+import { verifySessionOwnership } from '@/lib/auth/session-ownership';
 import { StructuredIdeaSchema } from '@/lib/validation/schemas';
 import { z } from 'zod';
 
@@ -10,6 +11,8 @@ import { z } from 'zod';
  * Validates with Zod schema and saves to database.
  *
  * POST /api/sessions/[sessionId]/idea
+ *
+ * SECURITY: Verifies session ownership before accepting submission
  */
 export async function POST(
   request: NextRequest,
@@ -29,18 +32,18 @@ export async function POST(
     // Validate with Zod schema (no LLM call)
     const validatedIdea = StructuredIdeaSchema.parse(structured_idea);
 
-    const { supabase } = await createAuthenticatedSupabaseClient();
+    const { supabase, user } = await createAuthenticatedSupabaseClient();
 
-    // Verify session exists and belongs to user (RLS handles this)
-    const { data: session, error: sessionError } = await supabase
-      .from('sessions')
-      .select('id, status')
-      .eq('id', params.sessionId)
-      .single();
+    // CRITICAL: Verify user owns this session before accepting idea submission
+    const { authorized, session, error: ownershipError } = await verifySessionOwnership(
+      supabase,
+      params.sessionId,
+      user.id
+    );
 
-    if (sessionError || !session) {
+    if (!authorized) {
       return NextResponse.json(
-        { error: 'Session not found or access denied', code: 'SESSION_NOT_FOUND' },
+        { error: ownershipError || 'Session not found or access denied', code: 'SESSION_NOT_FOUND' },
         { status: 404 }
       );
     }
@@ -104,13 +107,29 @@ export async function POST(
  * Retrieves the idea associated with this session.
  *
  * GET /api/sessions/[sessionId]/idea
+ *
+ * SECURITY: Verifies session ownership before returning sensitive data
  */
 export async function GET(
   request: NextRequest,
   { params }: { params: { sessionId: string } }
 ) {
   try {
-    const { supabase } = await createAuthenticatedSupabaseClient();
+    const { supabase, user } = await createAuthenticatedSupabaseClient();
+
+    // CRITICAL: Verify user owns this session before accessing idea
+    const { authorized, error: ownershipError } = await verifySessionOwnership(
+      supabase,
+      params.sessionId,
+      user.id
+    );
+
+    if (!authorized) {
+      return NextResponse.json(
+        { error: ownershipError || 'Session not found or access denied' },
+        { status: 404 }
+      );
+    }
 
     const { data, error } = await supabase
       .from('ideas')

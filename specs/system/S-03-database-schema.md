@@ -1,7 +1,7 @@
 # S-03: Database Schema
 
-**Version**: 1.1
-**Last Updated**: 2025-12-09
+**Version**: 1.2
+**Last Updated**: 2025-12-15
 **Status**: ✅ Spec Complete
 
 ---
@@ -153,6 +153,101 @@ await supabase.rpc('set_session_user_id', { user_id: authenticatedUser.id });
 ```
 
 **Security Note**: This function should only be callable by authenticated connections (service role key). RLS policies prevent unauthorized access even if session variable is manipulated.
+
+---
+
+## ⚠️ CRITICAL: Service Role Key Security
+
+### The Problem
+
+**Supabase Service Role Key bypasses ALL Row-Level Security (RLS) policies.**
+
+While RLS policies are defined in the database and enforced for connections using the anonymous key, **connections using the service role key have admin privileges and ignore RLS entirely**.
+
+### Why This Matters
+
+The application uses service role key for server-side operations (`createServerSupabaseClient()`). This means:
+
+❌ **WRONG ASSUMPTION**: "RLS will automatically filter data by user"
+✅ **REALITY**: Service role queries see ALL data across ALL users
+
+### Security Vulnerability Example
+
+```typescript
+// ❌ VULNERABLE - Service role key bypasses RLS
+const { data } = await supabase  // Using service role key
+  .from('sessions')
+  .select('*')
+  .eq('id', sessionId);  // Only checks sessionId, NO user_id filter
+
+// Result: ANY user can access ANY session by knowing the ID
+```
+
+### Required Solution
+
+**Every query that accesses user-scoped data MUST explicitly filter by `user_id`:**
+
+```typescript
+// ✅ SECURE - Explicit user_id filtering
+const { data } = await supabase
+  .from('sessions')
+  .select('*')
+  .eq('id', sessionId)
+  .eq('user_id', user.id);  // CRITICAL: Explicitly filter by user
+
+// Result: Users can only access their own data
+```
+
+### Authorization Pattern
+
+**Use `verifySessionOwnership()` utility function** (see implementation in `/src/lib/auth/session-ownership.ts`):
+
+```typescript
+import { verifySessionOwnership } from '@/lib/auth/session-ownership';
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { sessionId: string } }
+) {
+  const { supabase, user } = await createAuthenticatedSupabaseClient();
+
+  // CRITICAL: Verify ownership BEFORE accessing data
+  const { authorized, session, error } = await verifySessionOwnership(
+    supabase,
+    params.sessionId,
+    user.id
+  );
+
+  if (!authorized) {
+    return NextResponse.json(
+      { error: error || 'Session not found or access denied' },
+      { status: 404 }
+    );
+  }
+
+  // Safe to proceed - user owns this session
+}
+```
+
+### Implementation Checklist
+
+For ANY API endpoint that accesses user data:
+
+- [ ] Call `createAuthenticatedSupabaseClient()` to get authenticated user
+- [ ] Verify `user` is not null (return 401 if missing)
+- [ ] Use `verifySessionOwnership()` for session-scoped operations
+- [ ] OR add `.eq('user_id', user.id)` to ALL queries that fetch user data
+- [ ] Test with multiple users to verify isolation
+- [ ] Return 404 (not 403) for unauthorized access to avoid leaking resource existence
+
+### Why Not Use Anonymous Key?
+
+The service role key is needed because:
+1. Server-side operations require bypassing rate limits
+2. Some operations (like batch updates) need elevated privileges
+3. The application uses custom JWT auth (not Supabase Auth)
+
+The trade-off is that we must manually enforce authorization in application code.
 
 ---
 

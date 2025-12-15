@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAuthenticatedSupabaseClient } from '@/lib/auth/middleware';
+import { verifySessionOwnership } from '@/lib/auth/session-ownership';
 import { runMVTAAnalysis } from '@/lib/llm/prompts/mvta-analysis';
 
 /**
@@ -7,6 +8,8 @@ import { runMVTAAnalysis } from '@/lib/llm/prompts/mvta-analysis';
  *
  * POST /api/sessions/[sessionId]/analyze
  * Executes MVTA red team analysis on structured idea (independent of research)
+ *
+ * SECURITY: Verifies session ownership before triggering analysis
  */
 
 export async function POST(
@@ -14,7 +17,21 @@ export async function POST(
   { params }: { params: { sessionId: string } }
 ) {
   try {
-    const { supabase } = await createAuthenticatedSupabaseClient();
+    const { supabase, user } = await createAuthenticatedSupabaseClient();
+
+    // CRITICAL: Verify user owns this session before triggering analysis
+    const { authorized, error: ownershipError } = await verifySessionOwnership(
+      supabase,
+      params.sessionId,
+      user.id
+    );
+
+    if (!authorized) {
+      return NextResponse.json(
+        { error: ownershipError || 'Session not found or access denied' },
+        { status: 404 }
+      );
+    }
 
     // 1. Fetch structured idea
     const { data: idea, error: ideaError } = await supabase

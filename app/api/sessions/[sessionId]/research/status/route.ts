@@ -1,30 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAuthenticatedSupabaseClient } from '@/lib/auth/middleware';
+import { verifySessionOwnership } from '@/lib/auth/session-ownership';
 import { getAllResearchTypes } from '@/lib/constants/research';
 
 /**
  * GET /api/sessions/[sessionId]/research/status
  *
  * Returns completion status for all research types
+ *
+ * SECURITY: Verifies session ownership before returning research status
  */
 export async function GET(
   request: NextRequest,
   { params }: { params: { sessionId: string } }
 ) {
   try {
-    const { supabase } = await createAuthenticatedSupabaseClient();
+    const { supabase, user } = await createAuthenticatedSupabaseClient();
     const { sessionId } = params;
 
-    // Verify session exists
-    const { data: session, error: sessionError } = await supabase
-      .from('sessions')
-      .select('id')
-      .eq('id', sessionId)
-      .single();
+    // CRITICAL: Verify user owns this session
+    const { authorized, error: ownershipError } = await verifySessionOwnership(
+      supabase,
+      sessionId,
+      user.id
+    );
 
-    if (sessionError || !session) {
+    if (!authorized) {
       return NextResponse.json(
-        { error: 'Session not found', code: 'SESSION_NOT_FOUND' },
+        { error: ownershipError || 'Session not found or access denied', code: 'SESSION_NOT_FOUND' },
         { status: 404 }
       );
     }
