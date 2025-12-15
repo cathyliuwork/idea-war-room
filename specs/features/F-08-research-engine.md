@@ -1,9 +1,9 @@
 # F-08: Research Engine
 
-**Version**: 3.0
-**Last Updated**: 2025-12-14
+**Version**: 3.1
+**Last Updated**: 2025-12-15
 **Priority**: OPTIONAL
-**Status**: 🚧 Spec Updated (supports single-type research with optimized query generation)
+**Status**: ✅ Implemented (single-type research with failure detection, retry, and query reuse)
 
 ---
 
@@ -243,15 +243,18 @@ The Research Engine is the intelligence-gathering phase of MVTA analysis. After 
 1. **Research Type Selection**: User must select one of three types (competitor, community, regulatory)
 2. **Query Generation**: LLM generates 5-10 queries for **selected type only**
 3. **Parallel Execution**: Queries run in parallel (max 5 concurrent requests)
-4. **Result Limits**: Max 10 results per query
+4. **Result Limits**: Max 8 results per query (configurable via `SEARCH_RESULTS_PER_QUERY` constant)
 5. **Deduplication**: Results from same domain are deduplicated (keep highest relevance)
 6. **Graceful Degradation**: If search API fails, continue with empty results (don't block analysis)
 7. **Timeout**: Individual query timeout = 30 seconds; total research timeout = 3 minutes (per type)
 8. **Synthesis**: LLM synthesizes raw results into type-specific structured data
 9. **Multiple Research Runs**: Same session can have multiple research snapshots (one per type)
 10. **Completion Tracking**: Session metadata tracks which research types have been completed
-11. **View vs Re-run**: Clicking completed type shows results; re-run feature deferred to future
-12. **Query Display**: Show query topics to users during execution for transparency
+11. **Failure Detection**: System detects synthesis failures when queries exist but results are empty (`possibly_failed` flag)
+12. **Retry Behavior**: Users can retry failed research, which deletes the old snapshot and allows re-execution
+13. **Query Reuse**: Retry attempts reuse previously generated queries (saves tokens and time)
+14. **Auto-start Retry**: Retry flow automatically starts research without requiring extra button clicks
+15. **Query Display**: Show query topics to users during execution for transparency
 
 ---
 
@@ -320,7 +323,16 @@ interface ResearchStatusResponse {
 **Request Query Parameters**:
 - `type`: Required, one of 'competitor' | 'community' | 'regulatory'
 
-**Example**: `POST /api/sessions/[sessionId]/research?type=competitor`
+**Request Body** (Optional):
+```typescript
+interface ResearchRequestBody {
+  reuse_queries?: string[]; // Optional: Reuse queries from previous attempt (skips LLM query generation)
+}
+```
+
+**Example**:
+- Initial research: `POST /api/sessions/[sessionId]/research?type=competitor`
+- Retry with query reuse: `POST /api/sessions/[sessionId]/research?type=competitor` with body `{ reuse_queries: ["query1", "query2"] }`
 
 **Response** (Success - 201):
 ```typescript
@@ -329,6 +341,7 @@ interface ResearchResponse {
   research_type: 'competitor' | 'community' | 'regulatory';
   results_count: number; // e.g., competitors_found, signals_found, etc.
   queries: string[]; // Query topics for transparency
+  possibly_failed: boolean; // NEW: True if queries exist but results are empty (synthesis likely failed)
 }
 ```
 
@@ -337,9 +350,13 @@ interface ResearchResponse {
 - `IDEA_NOT_FOUND`: No structured idea exists for this session
 - `RESEARCH_FAILED`: All research queries failed
 - `INVALID_TYPE`: Research type parameter missing or invalid
-- `ALREADY_COMPLETED`: Research type already completed for this session (409 Conflict)
 
-**Implementation** (Updated 2025-12-14):
+**Retry Behavior** (Updated 2025-12-15):
+- Previous behavior: Returns 409 Conflict if research already exists
+- **New behavior**: Automatically deletes existing snapshot and allows retry
+- Supports query reuse via `reuse_queries` body parameter
+
+**Implementation** (Updated 2025-12-15):
 ```typescript
 // app/api/sessions/[sessionId]/research/route.ts
 import { conductResearch } from '@/lib/search/research-engine';
@@ -354,7 +371,19 @@ export async function POST(
 ) {
   const { supabase } = await createAuthenticatedSupabaseClient();
 
-  // UPDATED: Extract and validate type parameter
+  // NEW: Parse request body for optional reuse_queries
+  let reuseQueries: string[] | null = null;
+  try {
+    const body = await request.json();
+    if (body.reuse_queries && Array.isArray(body.reuse_queries)) {
+      reuseQueries = body.reuse_queries;
+      console.log(`♻️ Received ${reuseQueries.length} queries to reuse`);
+    }
+  } catch (e) {
+    // No body or invalid JSON, continue without reuse_queries
+  }
+
+  // Extract and validate type parameter
   const searchParams = request.nextUrl.searchParams;
   const type = searchParams.get('type') as ResearchType;
 
@@ -366,7 +395,7 @@ export async function POST(
     );
   }
 
-  // UPDATED: Check if research already completed for this type
+  // UPDATED (2025-12-15): Auto-delete existing to allow retry
   const { data: existing } = await supabase
     .from('research_snapshots')
     .select('id')
@@ -375,11 +404,9 @@ export async function POST(
     .single();
 
   if (existing) {
-    return NextResponse.json(
-      { error: `Research type '${type}' already completed for this session`,
-        code: 'ALREADY_COMPLETED' },
-      { status: 409 }
-    );
+    // Delete existing to allow retry
+    await supabase.from('research_snapshots').delete().eq('id', existing.id);
+    console.log(`🔄 Deleted existing ${type} research to allow retry`);
   }
 
   // Verify session and fetch structured idea
@@ -397,15 +424,20 @@ export async function POST(
   }
 
   try {
-    // UPDATED: Pass type parameter to conductResearch
-    // This enables type-specific query generation (50-60% token savings)
-    // Type assertion needed because TypeScript can't resolve overloads with union types
-    const researchResult = await conductResearch(idea.structured_idea, type as any);
+    // UPDATED (2025-12-15): Pass optional reuseQueries to conductResearch
+    // If provided, skips LLM query generation (saves tokens and time)
+    const researchResult = await conductResearch(
+      idea.structured_idea,
+      type as any,
+      reuseQueries || undefined
+    );
 
-    // Phase 3: Use typed result directly (no need to extract from old format)
     const typedResult = researchResult as TypedResearchResult;
 
-    // UPDATED: Save to database with new schema (research_type field)
+    // NEW (2025-12-15): Detect potential synthesis failure
+    const possiblyFailed = typedResult.queries.length > 0 && typedResult.results.length === 0;
+
+    // Save to database
     const { data: snapshot, error: snapshotError } = await supabase
       .from('research_snapshots')
       .insert({
@@ -431,7 +463,8 @@ export async function POST(
       research_snapshot_id: snapshot.id,
       research_type: typedResult.research_type,
       results_count: typedResult.results.length,
-      queries: typedResult.queries
+      queries: typedResult.queries,
+      possibly_failed: possiblyFailed, // NEW
     }, { status: 201 });
 
   } catch (error) {
@@ -447,7 +480,7 @@ export async function POST(
 
 ---
 
-**NEW Endpoint 3: GET /api/sessions/[sessionId]/research/[type]**
+**Endpoint 3: GET /api/sessions/[sessionId]/research/[type]**
 
 **Purpose**: Fetch completed research snapshot for specific type
 
@@ -462,6 +495,7 @@ export async function POST(
 type ResearchSnapshotResponse = TypedResearchResult & {
   research_snapshot_id: string;
   created_at: string;
+  possibly_failed: boolean; // NEW (2025-12-15): Calculated dynamically
 };
 
 // Equivalent expanded form:
@@ -471,12 +505,37 @@ interface ResearchSnapshotResponse {
   queries: string[];
   results: Competitor[] | CommunitySignal[] | RegulatorySignal[];
   created_at: string;
+  possibly_failed: boolean; // Detects synthesis failures
 }
 ```
 
 **Error Codes**:
 - `SESSION_NOT_FOUND`: Session ID invalid
 - `RESEARCH_NOT_FOUND`: No research completed for this type (404)
+
+---
+
+**NEW Endpoint 4: DELETE /api/sessions/[sessionId]/research/[type]**
+
+**Purpose**: Delete research snapshot to enable retry (Added 2025-12-15)
+
+**URL Parameters**:
+- `type`: One of 'competitor' | 'community' | 'regulatory'
+
+**Example**: `DELETE /api/sessions/[sessionId]/research/competitor`
+
+**Response** (Success - 200):
+```typescript
+interface DeleteResponse {
+  success: boolean;
+}
+```
+
+**Error Codes**:
+- `SESSION_NOT_FOUND`: Session ID invalid or access denied (403)
+- `INVALID_TYPE`: Research type parameter invalid (400)
+
+**Usage**: Called by retry flow to delete failed research before re-execution
 
 **Endpoint 4: GET /api/sessions/[sessionId]/research/progress** (Optional)
 
@@ -557,43 +616,63 @@ export async function conductResearch(
   type: 'regulatory'
 ): Promise<RegulatoryResearch>;
 
-// Implementation
+// Implementation (Updated 2025-12-15)
 export async function conductResearch(
   structuredIdea: StructuredIdea,
-  type: 'competitor' | 'community' | 'regulatory'
+  type: 'competitor' | 'community' | 'regulatory',
+  reuseQueries?: string[] // NEW: Optional queries to reuse (skips LLM generation)
 ): Promise<TypedResearchResult> {
-  // Step 1: Generate queries (type-specific)
-  const queriesResult = await generateResearchQueries(structuredIdea, type as any);
-
-  // Step 2: Extract queries based on result type
+  // Step 1: Use provided queries OR generate new ones
   let competitor_queries: string[] = [];
   let community_queries: string[] = [];
   let regulatory_queries: string[] = [];
 
-  if ('type' in queriesResult) {
-    // Type-specific result
-    switch (queriesResult.type) {
+  if (reuseQueries && reuseQueries.length > 0) {
+    // Reuse provided queries (skip LLM call for query generation)
+    console.log(`♻️ Reusing ${reuseQueries.length} queries (skipping generation)`);
+
+    // Map reused queries to the appropriate type
+    switch (type) {
       case 'competitor':
-        competitor_queries = queriesResult.queries;
+        competitor_queries = reuseQueries;
         break;
       case 'community':
-        community_queries = queriesResult.queries;
+        community_queries = reuseQueries;
         break;
       case 'regulatory':
-        regulatory_queries = queriesResult.queries;
+        regulatory_queries = reuseQueries;
         break;
+    }
+  } else {
+    // Generate queries (type-specific)
+    const queriesResult = await generateResearchQueries(structuredIdea, type as any);
+
+    // Extract queries based on result type
+    if ('type' in queriesResult) {
+      // Type-specific result
+      switch (queriesResult.type) {
+        case 'competitor':
+          competitor_queries = queriesResult.queries;
+          break;
+        case 'community':
+          community_queries = queriesResult.queries;
+          break;
+        case 'regulatory':
+          regulatory_queries = queriesResult.queries;
+          break;
+      }
     }
   }
 
-  // Step 3: Determine which research type to execute (type is now required)
+  // Step 2: Determine which research type to execute
   const shouldRunCompetitor = type === 'competitor';
   const shouldRunCommunity = type === 'community';
   const shouldRunRegulatory = type === 'regulatory';
 
-  // Step 4-7: Execute searches and synthesis for selected type only
+  // Step 3-6: Execute searches and synthesis for selected type only
   // ...
 
-  // Step 8: Return type-specific research result
+  // Step 7: Return type-specific research result
   switch (type) {
     case 'competitor':
       return {
@@ -620,6 +699,122 @@ export async function conductResearch(
 ```
 
 **See Also**: [S-04: LLM Integration - Prompt B](../system/S-04-llm-integration.md#prompt-b-generate-research-queries-updated---type-specific-support) for detailed prompt specifications.
+
+---
+
+### Failure Detection and Retry Mechanism
+
+**Added**: 2025-12-15
+
+**Problem**: When LLM synthesis fails (due to API errors, rate limits, etc.), the system previously displayed "No results found for this research type" which was misleading. Users had no way to distinguish between legitimate empty results and synthesis failures.
+
+**Solution**: Automatic failure detection with one-click retry and query reuse.
+
+#### Failure Detection
+
+The system detects potential synthesis failures using the `possibly_failed` flag:
+
+```typescript
+// Calculation logic (in both POST and GET endpoints)
+const possiblyFailed = typedResult.queries.length > 0 && typedResult.results.length === 0;
+```
+
+**Rationale**: If queries were successfully generated but results are empty, synthesis likely failed (not a legitimate "no results" scenario).
+
+#### Retry Flow
+
+**User Experience**:
+1. User sees research results with "⚠️ Research May Have Failed" message
+2. User clicks "Retry Research" button
+3. System saves queries to localStorage
+4. System deletes failed snapshot via DELETE API
+5. System redirects to execution page
+6. **Auto-start**: Research begins immediately (no extra button click)
+7. System reuses saved queries (skips LLM query generation)
+8. New results displayed on completion
+
+**Implementation Details**:
+
+**Frontend (Results Page)** - `/app/analyze/[sessionId]/research/[type]/page.tsx`:
+```typescript
+const handleRetry = async () => {
+  setIsRetrying(true);
+
+  // 1. Read existing queries before deleting
+  const response = await fetch(`/api/sessions/${sessionId}/research/${type}`);
+  if (response.ok) {
+    const data = await response.json();
+    if (data.queries?.length > 0) {
+      // Save to localStorage for reuse
+      localStorage.setItem(
+        `retry_queries_${sessionId}_${type}`,
+        JSON.stringify(data.queries)
+      );
+    }
+  }
+
+  // 2. Delete the failed snapshot
+  await fetch(`/api/sessions/${sessionId}/research/${type}`, {
+    method: 'DELETE',
+  });
+
+  // 3. Redirect to execution page
+  router.push(`/analyze/${sessionId}/research?type=${type}`);
+};
+```
+
+**Frontend (Execution Page)** - `/app/analyze/[sessionId]/research/page.tsx`:
+```typescript
+// Auto-start research if retry
+useEffect(() => {
+  if (!isLoading && user && sessionId && type && isValidType) {
+    const storageKey = `retry_queries_${sessionId}_${type}`;
+    const savedQueries = localStorage.getItem(storageKey);
+
+    if (savedQueries && !isResearching && !results && !error) {
+      console.log('🔄 Auto-starting research from retry');
+      handleStartResearch(); // Automatically starts without user click
+    }
+  }
+}, [isLoading, user, sessionId, type, isValidType]);
+
+const handleStartResearch = async () => {
+  const storageKey = `retry_queries_${sessionId}_${type}`;
+  const savedQueries = localStorage.getItem(storageKey);
+  let reuseQueries = savedQueries ? JSON.parse(savedQueries) : null;
+
+  const res = await fetch(`/api/sessions/${sessionId}/research?type=${type}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: reuseQueries ? JSON.stringify({ reuse_queries: reuseQueries }) : undefined,
+  });
+
+  // Clear saved queries after use
+  if (savedQueries) {
+    localStorage.removeItem(storageKey);
+  }
+};
+```
+
+#### Query Reuse Benefits
+
+- **Token Savings**: Skips LLM query generation (saves ~550-750 tokens per retry)
+- **Time Savings**: Eliminates query generation step (~5-10 seconds)
+- **Consistency**: Same queries ensure comparable results
+- **Cost Efficiency**: Reduces API costs during retries
+
+#### Configuration
+
+**Search Results Per Query**:
+```typescript
+// src/lib/constants/research.ts
+export const SEARCH_RESULTS_PER_QUERY = 8; // Configurable (previously hardcoded as 10)
+```
+
+**Benefits**:
+- Centralized configuration for easy tuning
+- Reduces prompt size for synthesis (~20% token reduction from 10→8)
+- Used in both search execution and synthesis prompt generation
 
 ---
 
@@ -1089,6 +1284,8 @@ describe('Result Deduplication', () => {
 - **Deep Scraping**: Fetch full web pages (not just snippets) for richer context
 - **Historical Tracking**: Track competitor changes over time
 - **Export Research**: Download research snapshot as PDF/JSON
+- **Persistent Failure History**: Track retry attempts and success rates in database
+- **Partial Result Recovery**: Save intermediate results during synthesis to recover from partial failures
 
 ### Known Limitations
 
@@ -1096,8 +1293,77 @@ describe('Result Deduplication', () => {
 - English-only for MVP
 - Max 25 queries per session (to control API costs)
 - No video/podcast analysis (text-only sources)
+- **Retry Mechanism**:
+  - False positives possible (legitimate empty results may be flagged as failures)
+  - Query storage uses localStorage (lost if user clears browser data)
+  - No persistent failure tracking or retry count limits
+  - Complete re-run on retry (no caching of search results)
 
 ### References
 
 - [S-04: LLM Integration](../system/S-04-llm-integration.md) - Prompt B
 - [S-05: Search & Research Integration](../system/S-05-search-research-integration.md) - Search client
+
+---
+
+## Changelog
+
+### Version 3.1 (2025-12-15)
+
+**New Features**:
+- **Failure Detection**: Added `possibly_failed` flag to detect synthesis failures
+  - Calculated when queries exist but results are empty
+  - Returned in both POST and GET API responses
+- **One-Click Retry**: Users can retry failed research with single button click
+  - DELETE endpoint added to remove failed snapshots
+  - Auto-delete on POST to allow seamless retries
+  - Removed 409 Conflict error for duplicate research
+- **Query Reuse**: Retry attempts reuse previously generated queries
+  - Saves queries to localStorage before deletion
+  - Skips LLM query generation on retry (saves tokens and time)
+  - Automatically cleared after successful reuse
+- **Auto-Start Retry**: Research begins immediately after retry click
+  - No extra button press required
+  - Seamless UX from failure to retry
+- **Configurable Search Results**: Centralized `SEARCH_RESULTS_PER_QUERY` constant
+  - Reduced from 10 to 8 results per query (~20% token reduction)
+  - Easy to tune for prompt size optimization
+
+**API Changes**:
+- `POST /api/sessions/[sessionId]/research`:
+  - Added optional `reuse_queries` body parameter
+  - Added `possibly_failed` to response
+  - Changed retry behavior: auto-delete instead of 409 error
+- `GET /api/sessions/[sessionId]/research/[type]`:
+  - Added `possibly_failed` field (calculated dynamically)
+- `DELETE /api/sessions/[sessionId]/research/[type]`:
+  - New endpoint for retry flow
+
+**Implementation Changes**:
+- `conductResearch()`: Added optional `reuseQueries` parameter
+- Results page: Added retry UI and localStorage-based query persistence
+- Execution page: Added auto-start logic for retry scenarios
+
+**Files Modified**:
+- `/src/lib/constants/research.ts`
+- `/src/lib/search/research-engine.ts`
+- `/app/api/sessions/[sessionId]/research/route.ts`
+- `/app/api/sessions/[sessionId]/research/[type]/route.ts`
+- `/app/analyze/[sessionId]/research/[type]/page.tsx`
+- `/app/analyze/[sessionId]/research/page.tsx`
+
+### Version 3.0 (2025-12-14)
+
+**Breaking Changes**:
+- Multi-type research architecture
+- Type-specific query generation
+- Database schema updated with `research_type` field
+
+### Version 2.0 (Earlier)
+
+- Initial multi-type support
+- Research type selection UI
+
+### Version 1.0 (Earlier)
+
+- Original single research flow implementation

@@ -21,6 +21,18 @@ export async function POST(
   try {
     const { supabase, user } = await createAuthenticatedSupabaseClient();
 
+    // Parse request body for optional reuse_queries
+    let reuseQueries: string[] | null = null;
+    try {
+      const body = await request.json();
+      if (body.reuse_queries && Array.isArray(body.reuse_queries)) {
+        reuseQueries = body.reuse_queries;
+        console.log(`♻️ Received ${reuseQueries.length} queries to reuse`);
+      }
+    } catch (e) {
+      // No body or invalid JSON, continue without reuse_queries
+    }
+
     // CRITICAL: Verify user owns this session before triggering research
     const { authorized, error: ownershipError } = await verifySessionOwnership(
       supabase,
@@ -49,7 +61,7 @@ export async function POST(
     // Type assertion after validation
     const type = typeParam as 'competitor' | 'community' | 'regulatory';
 
-    // Check if this type already exists
+    // Check if this type already exists - if so, delete it to allow retry
     const { data: existing } = await supabase
       .from('research_snapshots')
       .select('id')
@@ -58,10 +70,10 @@ export async function POST(
       .single();
 
     if (existing) {
-      return NextResponse.json(
-        { error: `Research type '${type}' already completed for this session` },
-        { status: 409 }
-      );
+      // Delete existing to allow retry
+      await supabase.from('research_snapshots').delete().eq('id', existing.id);
+
+      console.log(`🔄 Deleted existing ${type} research to allow retry`);
     }
 
     // 1. Verify session and fetch structured idea
@@ -80,11 +92,23 @@ export async function POST(
 
     // 2. Conduct research (only the requested type)
     console.log(`Starting ${type} research for session ${params.sessionId}...`);
+    if (reuseQueries) {
+      console.log(`♻️ Reusing ${reuseQueries.length} saved queries (skipping query generation)`);
+    }
     // Type assertion needed because TypeScript can't resolve overloads with union types
-    const researchResult = await conductResearch(idea.structured_idea, type as any);
+    const researchResult = await conductResearch(
+      idea.structured_idea,
+      type as any,
+      reuseQueries || undefined
+    );
 
     // Phase 2: Use typed result directly (no need to extract from old format)
     const typedResult = researchResult as TypedResearchResult;
+
+    // Detect potential synthesis failure
+    // If queries were generated but results are empty, synthesis likely failed
+    const possiblyFailed =
+      typedResult.queries.length > 0 && typedResult.results.length === 0;
 
     // 3. Save research snapshot to database
     const { data: snapshot, error: snapshotError } = await supabase
@@ -117,6 +141,7 @@ export async function POST(
         research_type: typedResult.research_type,
         results_count: typedResult.results.length,
         queries: typedResult.queries,
+        possibly_failed: possiblyFailed,
       },
       { status: 201 }
     );

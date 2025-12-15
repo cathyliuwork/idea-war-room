@@ -24,6 +24,7 @@ interface ResearchSnapshot {
   queries: string[];
   results: any[];
   created_at: string;
+  possibly_failed?: boolean;
 }
 
 export default function ResearchResultsPage() {
@@ -36,10 +37,50 @@ export default function ResearchResultsPage() {
   const [snapshot, setSnapshot] = useState<ResearchSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoadingData, setIsLoadingData] = useState(true);
+  const [isRetrying, setIsRetrying] = useState(false);
 
   // Validate research type
   const isValid = isValidResearchType(type);
   const config = isValid ? getResearchTypeConfig(type) : null;
+
+  // Handle retry
+  const handleRetry = async () => {
+    if (!sessionId || !type) return;
+
+    setIsRetrying(true);
+    setError(null);
+
+    try {
+      // 1. First, read the existing queries before deleting
+      const response = await fetch(
+        `/api/sessions/${sessionId}/research/${type}`
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        // Save queries to localStorage for reuse
+        if (data.queries && data.queries.length > 0) {
+          localStorage.setItem(
+            `retry_queries_${sessionId}_${type}`,
+            JSON.stringify(data.queries)
+          );
+          console.log(`💾 Saved ${data.queries.length} queries for retry`);
+        }
+      }
+
+      // 2. Delete the failed snapshot
+      await fetch(`/api/sessions/${sessionId}/research/${type}`, {
+        method: 'DELETE',
+      });
+
+      // 3. Redirect to execution page to run research again
+      router.push(`/analyze/${sessionId}/research?type=${type}`);
+    } catch (err) {
+      console.error('Error retrying research:', err);
+      setError('Failed to retry. Please try again.');
+      setIsRetrying(false);
+    }
+  };
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -221,9 +262,37 @@ export default function ResearchResultsPage() {
 
           {snapshot.results.length === 0 ? (
             <div className="bg-surface-elevated border border-border-light rounded-lg p-12 text-center">
-              <p className="text-text-secondary">
-                No results found for this research type.
-              </p>
+              {snapshot.possibly_failed ? (
+                // Synthesis likely failed - show retry option
+                <>
+                  <div className="mb-6">
+                    <div className="text-5xl mb-4">⚠️</div>
+                    <h3 className="text-xl font-bold text-text-primary mb-2">
+                      Research May Have Failed
+                    </h3>
+                    <p className="text-text-secondary mb-4">
+                      The research process completed but no results were
+                      generated. This might be due to an API error or rate
+                      limiting.
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleRetry}
+                    disabled={isRetrying}
+                    className="px-6 py-3 bg-brand-primary text-white rounded-lg hover:bg-brand-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isRetrying ? 'Retrying...' : 'Retry Research'}
+                  </button>
+                </>
+              ) : (
+                // Legitimate empty results (rare)
+                <>
+                  <div className="text-5xl mb-4">🔍</div>
+                  <p className="text-text-secondary">
+                    No results found for this research type.
+                  </p>
+                </>
+              )}
             </div>
           ) : (
             <div className="space-y-4">

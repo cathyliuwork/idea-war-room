@@ -52,9 +52,34 @@ export default function ResearchPage() {
     setError(null);
 
     try {
+      // Check if there are saved queries from a retry
+      const storageKey = `retry_queries_${sessionId}_${type}`;
+      const savedQueries = localStorage.getItem(storageKey);
+      let reuseQueries = null;
+
+      if (savedQueries) {
+        try {
+          reuseQueries = JSON.parse(savedQueries);
+          console.log(`♻️ Reusing ${reuseQueries.length} queries from previous attempt`);
+        } catch (e) {
+          console.error('Failed to parse saved queries:', e);
+        }
+      }
+
+      // Make API call with optional reuse_queries
       const res = await fetch(`/api/sessions/${sessionId}/research?type=${type}`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: reuseQueries ? JSON.stringify({ reuse_queries: reuseQueries }) : undefined,
       });
+
+      // Clear saved queries after use
+      if (savedQueries) {
+        localStorage.removeItem(storageKey);
+        console.log('🗑️ Cleared saved queries from localStorage');
+      }
 
       if (!res.ok) {
         const data = await res.json();
@@ -72,6 +97,20 @@ export default function ResearchPage() {
       setIsResearching(false);
     }
   };
+
+  // Auto-start research if this is a retry (has saved queries)
+  useEffect(() => {
+    if (!isLoading && user && sessionId && type && isValidType) {
+      const storageKey = `retry_queries_${sessionId}_${type}`;
+      const savedQueries = localStorage.getItem(storageKey);
+
+      if (savedQueries && !isResearching && !results && !error) {
+        console.log('🔄 Auto-starting research from retry');
+        handleStartResearch();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, user, sessionId, type, isValidType]);
 
   if (isLoading || !user) {
     return (

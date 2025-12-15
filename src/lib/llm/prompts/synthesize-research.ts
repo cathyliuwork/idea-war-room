@@ -1,5 +1,6 @@
 import { callLLMWithRetry } from '../client';
 import { z } from 'zod';
+import { SEARCH_RESULTS_PER_QUERY } from '@/lib/constants/research';
 
 // Import from search client
 interface SearchResult {
@@ -90,7 +91,7 @@ export async function synthesizeCompetitors(
   const context = searchResults
     .map((result) => {
       const snippets = result.response.results
-        .slice(0, 10) // Top 10 results per query
+        .slice(0, SEARCH_RESULTS_PER_QUERY)
         .map((r: SearchResult) => `[${r.title}](${r.url}): ${r.content.substring(0, 300)}...`)
         .join('\n\n');
       return `Query: "${result.keyword}"\n${snippets}`;
@@ -218,7 +219,7 @@ export async function synthesizeCommunitySignals(
   const context = searchResults
     .map((result) => {
       const snippets = result.response.results
-        .slice(0, 10)
+        .slice(0, SEARCH_RESULTS_PER_QUERY)
         .map((r) => `[${r.title}](${r.url}): ${r.content.substring(0, 300)}...`)
         .join('\n\n');
       return `Query: "${result.keyword}"\n${snippets}`;
@@ -343,7 +344,7 @@ export async function synthesizeRegulatorySignals(
   const context = searchResults
     .map((result) => {
       const snippets = result.response.results
-        .slice(0, 10)
+        .slice(0, SEARCH_RESULTS_PER_QUERY)
         .map((r) => `[${r.title}](${r.url}): ${r.content.substring(0, 300)}...`)
         .join('\n\n');
       return `Query: "${result.keyword}"\n${snippets}`;

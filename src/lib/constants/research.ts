@@ -12,6 +12,26 @@
  */
 
 // ============================================================================
+// SEARCH CONFIGURATION
+// ============================================================================
+
+/**
+ * Number of search results to fetch per query
+ *
+ * This constant controls:
+ * 1. Search API: max_results parameter (how many results to fetch)
+ * 2. Synthesis: Number of results to include in LLM prompt
+ *
+ * Impact on prompt size:
+ * - 5 results: ~5,000 tokens (conservative, may miss info)
+ * - 8 results: ~8,000 tokens (balanced, recommended)
+ * - 10 results: ~10,000 tokens (comprehensive, may hit limits)
+ *
+ * Adjust this value to balance between information richness and API stability.
+ */
+export const SEARCH_RESULTS_PER_QUERY = 8;
+
+// ============================================================================
 // RESEARCH TYPE METADATA
 // ============================================================================
 

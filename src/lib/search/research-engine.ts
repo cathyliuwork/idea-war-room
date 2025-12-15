@@ -16,6 +16,7 @@ import type {
   RegulatoryResearch,
   TypedResearchResult,
 } from '@/lib/validation/schemas';
+import { SEARCH_RESULTS_PER_QUERY } from '@/lib/constants/research';
 
 /**
  * Research Engine
@@ -60,28 +61,48 @@ export async function conductResearch(
  *
  * @param structuredIdea - Structured idea from Prompt A
  * @param type - Research type to execute (competitor, community, or regulatory)
+ * @param reuseQueries - Optional array of queries to reuse (skips query generation)
  * @returns Type-specific research result
  * @throws Error if critical steps fail
  */
 export async function conductResearch(
   structuredIdea: StructuredIdea,
-  type: 'competitor' | 'community' | 'regulatory'
+  type: 'competitor' | 'community' | 'regulatory',
+  reuseQueries?: string[]
 ): Promise<TypedResearchResult> {
   console.log('🔬 Starting research phase...');
 
   try {
-    // Step 1: Generate research queries using Prompt B
-    console.log('📝 Generating research queries...');
-    // Type assertion needed because TypeScript can't resolve overloads with union types
-    const queriesResult: ResearchQueries | TypeSpecificQueries =
-      await generateResearchQueries(structuredIdea, (type ?? 'all') as any);
-
-    // Extract queries based on result type
     let competitor_queries: string[] = [];
     let community_queries: string[] = [];
     let regulatory_queries: string[] = [];
 
-    if ('type' in queriesResult) {
+    // Step 1: Use provided queries OR generate new ones
+    if (reuseQueries && reuseQueries.length > 0) {
+      // Reuse provided queries (skip LLM call for query generation)
+      console.log(`♻️ Reusing ${reuseQueries.length} queries (skipping generation)`);
+
+      // Map reused queries to the appropriate type
+      switch (type) {
+        case 'competitor':
+          competitor_queries = reuseQueries;
+          break;
+        case 'community':
+          community_queries = reuseQueries;
+          break;
+        case 'regulatory':
+          regulatory_queries = reuseQueries;
+          break;
+      }
+    } else {
+      // Generate research queries using Prompt B
+      console.log('📝 Generating research queries...');
+      // Type assertion needed because TypeScript can't resolve overloads with union types
+      const queriesResult: ResearchQueries | TypeSpecificQueries =
+        await generateResearchQueries(structuredIdea, (type ?? 'all') as any);
+
+      // Extract queries based on result type
+      if ('type' in queriesResult) {
       // Type-specific result - explicit cast needed for discriminated union narrowing
       const typedResult = queriesResult as TypeSpecificQueries;
       console.log(`✅ Generated ${typedResult.queries.length} ${typedResult.type} queries`);
@@ -109,6 +130,7 @@ export async function conductResearch(
   - Competitor: ${competitor_queries.length}
   - Community: ${community_queries.length}
   - Regulatory: ${regulatory_queries.length}`);
+      }
     }
 
     // Determine which research type to execute (type is now required)
@@ -130,7 +152,7 @@ export async function conductResearch(
       try {
         competitorResults = await searchWithRetry({
           keywords: competitor_queries,
-          max_results: 10,
+          max_results: SEARCH_RESULTS_PER_QUERY,
         });
         console.log(`✅ Competitor search complete (${competitorResults.queries.length} queries)`);
       } catch (error) {
@@ -145,7 +167,7 @@ export async function conductResearch(
       try {
         communityResults = await searchWithRetry({
           keywords: community_queries,
-          max_results: 10,
+          max_results: SEARCH_RESULTS_PER_QUERY,
         });
         console.log(`✅ Community search complete (${communityResults.queries.length} queries)`);
       } catch (error) {
@@ -160,7 +182,7 @@ export async function conductResearch(
       try {
         regulatoryResults = await searchWithRetry({
           keywords: regulatory_queries,
-          max_results: 10,
+          max_results: SEARCH_RESULTS_PER_QUERY,
         });
         console.log(`✅ Regulatory search complete (${regulatoryResults.queries.length} queries)`);
       } catch (error) {
