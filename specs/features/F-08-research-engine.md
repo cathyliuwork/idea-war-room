@@ -1,9 +1,9 @@
 # F-08: Research Engine
 
-**Version**: 2.0
-**Last Updated**: 2025-12-12
+**Version**: 2.1
+**Last Updated**: 2025-12-14
 **Priority**: OPTIONAL
-**Status**: 🚧 Spec Updated (supports single-type research)
+**Status**: 🚧 Spec Updated (supports single-type research with optimized query generation)
 
 ---
 
@@ -339,19 +339,47 @@ interface ResearchResponse {
 - `INVALID_TYPE`: Research type parameter missing or invalid
 - `ALREADY_COMPLETED`: Research type already completed for this session (409 Conflict)
 
-**Implementation**:
+**Implementation** (Updated 2025-12-14):
 ```typescript
 // app/api/sessions/[sessionId]/research/route.ts
 import { conductResearch } from '@/lib/search/research-engine';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createAuthenticatedSupabaseClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import type { ResearchType } from '@/lib/constants/research';
 
 export async function POST(
   request: Request,
   { params }: { params: { sessionId: string } }
 ) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const { supabase } = await createAuthenticatedSupabaseClient();
+
+  // UPDATED: Extract and validate type parameter
+  const searchParams = request.nextUrl.searchParams;
+  const type = searchParams.get('type') as ResearchType;
+
+  if (!type || !['competitor', 'community', 'regulatory'].includes(type)) {
+    return NextResponse.json(
+      { error: 'Invalid or missing research type parameter. Use ?type=competitor|community|regulatory',
+        code: 'INVALID_TYPE' },
+      { status: 400 }
+    );
+  }
+
+  // UPDATED: Check if research already completed for this type
+  const { data: existing } = await supabase
+    .from('research_snapshots')
+    .select('id')
+    .eq('session_id', params.sessionId)
+    .eq('research_type', type)
+    .single();
+
+  if (existing) {
+    return NextResponse.json(
+      { error: `Research type '${type}' already completed for this session`,
+        code: 'ALREADY_COMPLETED' },
+      { status: 409 }
+    );
+  }
 
   // Verify session and fetch structured idea
   const { data: idea, error: ideaError } = await supabase
@@ -362,45 +390,62 @@ export async function POST(
 
   if (ideaError || !idea) {
     return NextResponse.json(
-      { error: 'Idea not found', code: 'IDEA_NOT_FOUND' },
+      { error: 'Idea not found or access denied', code: 'IDEA_NOT_FOUND' },
       { status: 404 }
     );
   }
 
   try {
-    // Conduct research (see S-05 for implementation)
-    const researchSnapshot = await conductResearch(idea.structured_idea);
+    // UPDATED: Pass type parameter to conductResearch
+    // This enables type-specific query generation (50-60% token savings)
+    const researchSnapshot = await conductResearch(idea.structured_idea, type);
 
-    // Save to database
+    // UPDATED: Extract type-specific data from snapshot
+    let queries: string[] = [];
+    let results: any[] = [];
+
+    switch (type) {
+      case 'competitor':
+        queries = researchSnapshot.competitor_queries;
+        results = researchSnapshot.competitors;
+        break;
+      case 'community':
+        queries = researchSnapshot.community_queries;
+        results = researchSnapshot.community_signals;
+        break;
+      case 'regulatory':
+        queries = researchSnapshot.regulatory_queries;
+        results = researchSnapshot.regulatory_signals;
+        break;
+    }
+
+    // UPDATED: Save to database with new schema (research_type field)
     const { data: snapshot, error: snapshotError } = await supabase
       .from('research_snapshots')
       .insert({
         session_id: params.sessionId,
-        competitor_queries: researchSnapshot.competitor_queries || [],
-        community_queries: researchSnapshot.community_queries || [],
-        regulatory_queries: researchSnapshot.regulatory_queries || [],
-        competitors: researchSnapshot.competitors,
-        community_signals: researchSnapshot.community_signals,
-        regulatory_signals: researchSnapshot.regulatory_signals
+        research_type: type,  // NEW: Type-specific field
+        queries: queries,     // NEW: Single query array
+        results: results,     // NEW: Single results array
       })
-      .select()
+      .select('id')
       .single();
 
     if (snapshotError) {
       throw new Error(`Failed to save research: ${snapshotError.message}`);
     }
 
-    // Update session status to 'analysis'
+    // Update session research_completed flag
     await supabase
       .from('sessions')
-      .update({ status: 'analysis' })
+      .update({ research_completed: true })
       .eq('id', params.sessionId);
 
     return NextResponse.json({
       research_snapshot_id: snapshot.id,
-      competitors_found: researchSnapshot.competitors.length,
-      community_signals_found: researchSnapshot.community_signals.length,
-      regulatory_signals_found: researchSnapshot.regulatory_signals.length
+      research_type: type,
+      results_count: results.length,
+      queries: queries
     }, { status: 201 });
 
   } catch (error) {
@@ -458,6 +503,88 @@ data: {"stage": "complete", "progress": 100, "results_count": 5}
 ```
 
 **Implementation**: (Optional for MVP - can use polling instead)
+
+---
+
+### Query Generation Implementation
+
+**Overview**: Research queries are generated using LLM (Prompt B) with type-specific prompts for optimized token usage.
+
+**Function**: `generateResearchQueries(structuredIdea, type)`
+
+**Location**: `src/lib/llm/prompts/generate-queries.ts`
+
+**Type-Specific Behavior** (Updated 2025-12-14):
+
+| Type | Prompt Template | Output | Token Usage |
+|------|----------------|--------|-------------|
+| `'competitor'` | `COMPETITOR_SYSTEM_PROMPT` | `{ type: 'competitor', queries: string[] }` | ~550-750 tokens |
+| `'community'` | `COMMUNITY_SYSTEM_PROMPT` | `{ type: 'community', queries: string[] }` | ~550-750 tokens |
+| `'regulatory'` | `REGULATORY_SYSTEM_PROMPT` | `{ type: 'regulatory', queries: string[] }` | ~550-750 tokens |
+| `'all'` or `undefined` | `SYSTEM_PROMPT` (combined) | `{ competitor_queries, community_queries, regulatory_queries }` | ~1300-1700 tokens |
+
+**Token Optimization**: Type-specific generation uses **50-60% fewer tokens** compared to generating all types at once.
+
+**Prompt Templates**:
+
+1. **COMPETITOR_SYSTEM_PROMPT**: Focuses on competitive intelligence
+   - Targets: Direct competitors, adjacent products, established players, alternatives
+   - Keywords: Pricing, market positioning, product features
+   - Output: 5-10 targeted queries
+
+2. **COMMUNITY_SYSTEM_PROMPT**: Focuses on user discussions and sentiment
+   - Targets: Reddit, Hacker News, Product Hunt, forums
+   - Keywords: Pain points, complaints, feature requests, reviews
+   - Platform hints: "reddit", "hn", "discussion"
+   - Output: 5-10 targeted queries
+
+3. **REGULATORY_SYSTEM_PROMPT**: Focuses on compliance requirements
+   - Targets: Regulations, certifications, legal requirements
+   - Domain filter: Only for heavily regulated domains (healthcare, finance, education, data privacy)
+   - Output: 0-5 queries (returns empty array for non-regulated domains)
+
+**Integration with conductResearch**:
+
+```typescript
+// src/lib/search/research-engine.ts
+export async function conductResearch(
+  structuredIdea: StructuredIdea,
+  type?: 'competitor' | 'community' | 'regulatory'
+): Promise<ResearchSnapshot> {
+  // Step 1: Generate queries (type-specific if type provided)
+  const queriesResult = await generateResearchQueries(structuredIdea, type);
+
+  // Step 2: Extract queries based on result type
+  let competitor_queries: string[] = [];
+  let community_queries: string[] = [];
+  let regulatory_queries: string[] = [];
+
+  if ('type' in queriesResult) {
+    // Type-specific result
+    switch (queriesResult.type) {
+      case 'competitor':
+        competitor_queries = queriesResult.queries;
+        break;
+      case 'community':
+        community_queries = queriesResult.queries;
+        break;
+      case 'regulatory':
+        regulatory_queries = queriesResult.queries;
+        break;
+    }
+  } else {
+    // All types result
+    competitor_queries = queriesResult.competitor_queries;
+    community_queries = queriesResult.community_queries;
+    regulatory_queries = queriesResult.regulatory_queries;
+  }
+
+  // Step 3-7: Execute searches and synthesis for selected type(s)
+  // ... (rest of implementation)
+}
+```
+
+**See Also**: [S-04: LLM Integration - Prompt B](../system/S-04-llm-integration.md#prompt-b-generate-research-queries-updated---type-specific-support) for detailed prompt specifications.
 
 ---
 

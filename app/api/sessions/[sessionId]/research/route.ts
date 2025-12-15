@@ -19,14 +19,17 @@ export async function POST(
 
     // Extract and validate research type from query params
     const searchParams = request.nextUrl.searchParams;
-    const type = searchParams.get('type');
+    const typeParam = searchParams.get('type');
 
-    if (!type || !isValidResearchType(type)) {
+    if (!typeParam || !isValidResearchType(typeParam)) {
       return NextResponse.json(
         { error: 'Invalid or missing research type parameter. Use ?type=competitor|community|regulatory' },
         { status: 400 }
       );
     }
+
+    // Type assertion after validation
+    const type = typeParam as 'competitor' | 'community' | 'regulatory';
 
     // Check if this type already exists
     const { data: existing } = await supabase
@@ -57,9 +60,9 @@ export async function POST(
       );
     }
 
-    // 2. Conduct research (all types - we'll extract the relevant one)
+    // 2. Conduct research (only the requested type)
     console.log(`Starting ${type} research for session ${params.sessionId}...`);
-    const researchSnapshot = await conductResearch(idea.structured_idea);
+    const researchSnapshot = await conductResearch(idea.structured_idea, type);
 
     // 3. Extract type-specific data
     let queries: string[] = [];

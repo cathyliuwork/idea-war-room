@@ -39,7 +39,7 @@ export default function Step1CoreConcept({ form }: Step1CoreConceptProps) {
             Core Concept
           </h2>
           <p className="text-text-secondary">
-            Let's start with the essentials. Describe your idea in a clear and concise way.
+            Let&apos;s start with the essentials. Describe your idea in a clear and concise way.
           </p>
         </div>
         <button

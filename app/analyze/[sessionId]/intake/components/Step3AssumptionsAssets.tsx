@@ -51,7 +51,7 @@ export default function Step3AssumptionsAssets({ form }: Step3AssumptionsAssetsP
             Assumptions & Assets
           </h2>
           <p className="text-text-secondary">
-            These fields are optional but help us provide a more comprehensive analysis. Skip any that don't apply.
+            These fields are optional but help us provide a more comprehensive analysis. Skip any that don&apos;t apply.
           </p>
         </div>
         <button

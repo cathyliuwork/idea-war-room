@@ -153,11 +153,9 @@ export default function ResearchPage() {
               <div className="p-4 bg-brand-light border border-brand-primary rounded-lg">
                 <h2 className="font-semibold text-text-primary mb-2">Research Complete! 🎉</h2>
                 <ul className="text-sm text-text-secondary space-y-1">
-                  <li>✅ Found {results.competitors_found} competitors</li>
-                  <li>✅ Analyzed {results.community_signals_found} community discussions</li>
-                  <li>
-                    ✅ Identified {results.regulatory_signals_found} regulatory considerations
-                  </li>
+                  <li>✅ {typeConfig?.label}: Found {results.results_count} results</li>
+                  <li>✅ Generated {results.queries.length} research queries</li>
+                  <li>✅ Analysis data ready for MVTA</li>
                 </ul>
               </div>
 

@@ -129,7 +129,7 @@ export default function ChoicePage() {
               Choose Your Next Step
             </h1>
             <p className="text-text-secondary">
-              Your idea has been saved. Select how you'd like to proceed.
+              Your idea has been saved. Select how you&apos;d like to proceed.
             </p>
           </div>
           <button

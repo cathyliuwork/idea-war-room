@@ -5,12 +5,12 @@
  * Supports multi-keyword searches for competitor, community, and regulatory research.
  */
 
-interface SearchRequest {
+export interface SearchRequest {
   keywords: string[];
   max_results?: number; // Default: 6, Max: 20
 }
 
-interface SearchResult {
+export interface SearchResult {
   title: string;
   url: string;
   content: string;
@@ -18,7 +18,7 @@ interface SearchResult {
   published_date?: string;
 }
 
-interface SearchQueryResult {
+export interface SearchQueryResult {
   keyword: string;
   response: {
     results: SearchResult[];
@@ -26,7 +26,7 @@ interface SearchQueryResult {
   };
 }
 
-interface SearchResponse {
+export interface SearchResponse {
   queries: SearchQueryResult[];
   combined_answer?: string | null;
   errors?: Array<{

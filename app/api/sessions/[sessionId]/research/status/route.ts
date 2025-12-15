@@ -51,7 +51,7 @@ export async function GET(
     > = {};
 
     for (const type of allTypes) {
-      const snapshot = snapshots?.find((s) => s.research_type === type);
+      const snapshot = snapshots?.find((s: any) => s.research_type === type);
       availableTypes[type] = {
         completed: !!snapshot,
         snapshot_id: snapshot?.id,
@@ -60,7 +60,7 @@ export async function GET(
     }
 
     // Calculate completed types list
-    const completedTypes = snapshots?.map((s) => s.research_type) || [];
+    const completedTypes = snapshots?.map((s: any) => s.research_type) || [];
 
     return NextResponse.json({
       completed_types: completedTypes,

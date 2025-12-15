@@ -111,25 +111,15 @@ interface ResearchContext {
  * Run MVTA Red Team Analysis
  *
  * @param structuredIdea - Structured idea from Prompt A
- * @param researchContext - Research snapshot from F-03
+ * @param researchContext - Optional research context (not used - MVTA is independent)
  * @returns MVTA damage report
  * @throws Error if LLM fails or output validation fails
  */
 export async function runMVTAAnalysis(
   structuredIdea: StructuredIdea,
-  researchContext: ResearchContext
+  researchContext?: ResearchContext
 ): Promise<MVTAReport> {
-  // Check if research data exists
-  const hasResearch =
-    researchContext.competitors.length > 0 ||
-    researchContext.community_signals.length > 0 ||
-    researchContext.regulatory_signals.length > 0;
-
-  // Limit data to reduce prompt size and avoid API errors
-  const topCompetitors = researchContext.competitors.slice(0, 5);
-  const topCommunitySignals = researchContext.community_signals.slice(0, 10);
-  const allRegulatorySignals = researchContext.regulatory_signals;
-
+  // MVTA runs independently without research data
   const userPrompt = `Startup Idea:
 High Concept: ${structuredIdea.high_concept}
 Value Proposition: ${structuredIdea.value_proposition}
@@ -143,48 +133,13 @@ Assumptions:
 - Technical: ${structuredIdea.assumptions.technical.join(', ')}
 - Business Model: ${structuredIdea.assumptions.business_model.join(', ')}
 
-${
-  hasResearch
-    ? `Research Evidence:
-
-Competitors Found (showing top ${topCompetitors.length} of ${researchContext.competitors.length}):
-${topCompetitors
-  .map(
-    (c, i) => `${i + 1}. ${c.name}
-   Summary: ${c.summary}
-   Strengths: ${c.strengths.slice(0, 3).join(', ')}
-   Weaknesses: ${c.weaknesses.slice(0, 3).join(', ')}`
-  )
-  .join('\n\n')}
-
-Community Signals (showing top ${topCommunitySignals.length} of ${researchContext.community_signals.length}):
-${topCommunitySignals
-  .map(
-    (s, i) => `${i + 1}. [${s.source}] ${s.title}
-   Sentiment: ${s.sentiment}
-   Themes: ${s.themes.slice(0, 3).join(', ')}`
-  )
-  .join('\n\n')}
-
-${
-  allRegulatorySignals.length > 0
-    ? `Regulatory Context (${allRegulatorySignals.length} signals):
-${allRegulatorySignals
-  .map(
-    (r, i) => `${i + 1}. ${r.regulation}
-   Summary: ${r.summary.substring(0, 200)}...`
-  )
-  .join('\n\n')}`
-    : ''
-}`
-    : `Research Evidence: No online research was conducted for this analysis.
+Research Evidence: No online research was conducted for this analysis.
 
 IMPORTANT: Since no research data is available, base your analysis on:
 1. The competitive landscape description provided by the founder
 2. General industry knowledge and common patterns
 3. The founder's stated assumptions (these may be untested)
-4. Plausible real-world scenarios (cite hypothetical examples where appropriate)`
-}
+4. Plausible real-world scenarios (cite hypothetical examples where appropriate)
 
 Execute MVTA red team analysis. Output ONLY the JSON.`;
 

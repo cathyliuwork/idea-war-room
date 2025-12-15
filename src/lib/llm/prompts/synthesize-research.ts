@@ -106,7 +106,7 @@ export async function synthesizeCompetitors(
     ],
     model: 'gemini-2.5-pro',
     temperature: 0.4,
-    maxTokens: 2000,
+    maxTokens: 20000,  // Increased to support large synthesis outputs
     responseFormat: 'json_object',
   });
 
@@ -234,7 +234,7 @@ export async function synthesizeCommunitySignals(
     ],
     model: 'gemini-2.5-pro',
     temperature: 0.4,
-    maxTokens: 2500,
+    maxTokens: 20000,  // Increased to support large synthesis outputs
     responseFormat: 'json_object',
   });
 
@@ -359,7 +359,7 @@ export async function synthesizeRegulatorySignals(
     ],
     model: 'gemini-2.5-pro',
     temperature: 0.3,
-    maxTokens: 1500,
+    maxTokens: 20000,  // Increased to support large synthesis outputs
     responseFormat: 'json_object',
   });
 

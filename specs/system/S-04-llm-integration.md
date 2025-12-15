@@ -213,62 +213,193 @@ export async function structureIdea(rawInput: string): Promise<StructuredIdea> {
 
 ---
 
-### Prompt B: Generate Research Queries
+### Prompt B: Generate Research Queries (UPDATED - Type-Specific Support)
 
-**Purpose**: Generate focused web search queries for competitor analysis, community listening, and regulatory research.
+**Version**: 2.0 (Updated 2025-12-14)
 
-**System Prompt**:
+**Purpose**: Generate focused web search queries for a **specific research type** (competitor, community, or regulatory) or all types at once.
+
+**Key Enhancement**: Now supports type-specific query generation with dedicated prompts for each research type, enabling 50-60% token reduction when generating queries for a single type.
+
+---
+
+#### Implementation Architecture
+
+**File**: `src/lib/llm/prompts/generate-queries.ts`
+
+**Three Separate Prompt Templates** (Type-Specific):
+
+1. **COMPETITOR_SYSTEM_PROMPT**: Focused on competitive intelligence
+   - Identifies direct competitors, adjacent products, established players
+   - Emphasizes pricing, market positioning, strengths/weaknesses
+   - Generates 5-10 targeted queries
+
+2. **COMMUNITY_SYSTEM_PROMPT**: Focused on user discussions and sentiment
+   - Targets Reddit, Hacker News, Product Hunt, forums
+   - Emphasizes pain points, feature requests, reviews
+   - Includes platform hints ("reddit", "hn", "discussion")
+   - Generates 5-10 targeted queries
+
+3. **REGULATORY_SYSTEM_PROMPT**: Focused on compliance requirements
+   - Only generates queries for heavily regulated domains (healthcare, finance, education, data privacy)
+   - Emphasizes compliance requirements, certifications, legal restrictions
+   - Returns empty array for non-regulated domains
+   - Generates 0-5 queries (can be empty)
+
+4. **SYSTEM_PROMPT** (Original): Combined prompt for all three types
+   - Used when `type='all'` or type is not specified
+   - Maintains backward compatibility
+
+---
+
+#### Function Signature (Type-Safe Overloads)
+
 ```typescript
-const SYSTEM_PROMPT_GENERATE_QUERIES = `You generate focused web search queries for startup idea research.
+// Type-specific query generation (NEW)
+export async function generateResearchQueries(
+  ideaSchema: StructuredIdea,
+  type: 'competitor'
+): Promise<CompetitorQueries>;
 
-Goals:
-- Find similar products and competitors
-- Find user conversations in online communities (Reddit, forums, reviews)
-- Surface unmet needs and already-satisfied needs
-- Optionally surface relevant regulatory/ethical context
+export async function generateResearchQueries(
+  ideaSchema: StructuredIdea,
+  type: 'community'
+): Promise<CommunityQueries>;
 
-Output Format:
-{
-  "competitor_queries": ["string (3-7 words, max 10 queries)"],
-  "community_queries": ["string (4-8 words, max 10 queries, include platform hints like 'reddit' or 'forum')"],
-  "regulatory_queries": ["string (3-7 words, max 5 queries, ONLY if domain is sensitive like health/finance/children)"]
-}
+export async function generateResearchQueries(
+  ideaSchema: StructuredIdea,
+  type: 'regulatory'
+): Promise<RegulatoryQueries>;
 
-Query Quality Guidelines:
-- Be specific (not "email marketing tools" but "email automation SaaS for SMBs 2025")
-- Include year for recency (2024, 2025)
-- For community queries, include platform hints and sentiment keywords ("complaints", "frustrated", "wish there was")
-- For regulatory queries, focus on compliance requirements and penalties`;
-
-const USER_PROMPT_GENERATE_QUERIES = (ideaSchema: StructuredIdea) => `
-Here is the startup idea in MVTA schema:
-
-${JSON.stringify(ideaSchema, null, 2)}
-
-Generate 3-5 search queries for each category:
-- competitor_queries: Find similar tools and competitors
-- community_queries: Find user discussions, complaints, reviews, unmet needs
-- regulatory_queries: ONLY if domain appears sensitive (health, finance, kids, etc.)
-
-Output valid JSON only.
-`;
+// All types at once (original behavior)
+export async function generateResearchQueries(
+  ideaSchema: StructuredIdea,
+  type?: 'all'
+): Promise<ResearchQueries>;
 ```
 
-**Usage Example**:
-```typescript
-export async function generateResearchQueries(ideaSchema: StructuredIdea): Promise<ResearchQueries> {
-  const response = await callLLMWithRetry({
-    messages: [
-      { role: 'system', content: SYSTEM_PROMPT_GENERATE_QUERIES },
-      { role: 'user', content: USER_PROMPT_GENERATE_QUERIES(ideaSchema) }
-    ],
-    temperature: 0.5,
-    maxTokens: 1500,
-    responseFormat: 'json_object'
-  });
+---
 
-  return JSON.parse(response.content);
-}
+#### Return Types
+
+```typescript
+// Type-specific results (NEW)
+type CompetitorQueries = {
+  type: 'competitor';
+  queries: string[];  // 5-10 queries
+};
+
+type CommunityQueries = {
+  type: 'community';
+  queries: string[];  // 5-10 queries
+};
+
+type RegulatoryQueries = {
+  type: 'regulatory';
+  queries: string[];  // 0-5 queries (can be empty)
+};
+
+type TypeSpecificQueries = CompetitorQueries | CommunityQueries | RegulatoryQueries;
+
+// All types result (original)
+type ResearchQueries = {
+  competitor_queries: string[];
+  community_queries: string[];
+  regulatory_queries: string[];
+};
+```
+
+---
+
+#### Usage Examples
+
+**Type-Specific Query Generation** (Recommended):
+```typescript
+// Generate competitor queries only
+const competitorQueries = await generateResearchQueries(ideaSchema, 'competitor');
+// Returns: { type: 'competitor', queries: ['...', '...', ...] }
+
+// Generate community queries only
+const communityQueries = await generateResearchQueries(ideaSchema, 'community');
+// Returns: { type: 'community', queries: ['...', '...', ...] }
+
+// Generate regulatory queries only
+const regulatoryQueries = await generateResearchQueries(ideaSchema, 'regulatory');
+// Returns: { type: 'regulatory', queries: ['...', '...'] } or { type: 'regulatory', queries: [] }
+```
+
+**All Types at Once** (Backward Compatible):
+```typescript
+const allQueries = await generateResearchQueries(ideaSchema);
+// or
+const allQueries = await generateResearchQueries(ideaSchema, 'all');
+// Returns: { competitor_queries: [...], community_queries: [...], regulatory_queries: [...] }
+```
+
+---
+
+#### Token Optimization
+
+**Type-Specific Generation**:
+- Input tokens: ~400-500 (focused prompt + context)
+- Output tokens: ~150-250 (5-10 queries)
+- **Total: ~550-750 tokens**
+
+**All Types Generation**:
+- Input tokens: ~800-1000 (combined prompt + context)
+- Output tokens: ~500-700 (15-25 queries across three types)
+- **Total: ~1300-1700 tokens**
+
+**Savings**: **50-60% token reduction** when generating single type
+
+---
+
+#### Implementation Details
+
+**Prompt Selection Logic**:
+```typescript
+const getPromptConfig = (type: ResearchType | 'all') => {
+  switch (type) {
+    case 'competitor':
+      return {
+        systemPrompt: COMPETITOR_SYSTEM_PROMPT,
+        schema: TypeSpecificQueriesSchema,
+        isTypeSpecific: true,
+      };
+    case 'community':
+      return {
+        systemPrompt: COMMUNITY_SYSTEM_PROMPT,
+        schema: TypeSpecificQueriesSchema,
+        isTypeSpecific: true,
+      };
+    case 'regulatory':
+      return {
+        systemPrompt: REGULATORY_SYSTEM_PROMPT,
+        schema: RegulatoryQueriesSchema,
+        isTypeSpecific: true,
+      };
+    case 'all':
+    default:
+      return {
+        systemPrompt: SYSTEM_PROMPT,
+        schema: ResearchQueriesSchema,
+        isTypeSpecific: false,
+      };
+  }
+};
+
+const config = getPromptConfig(type);
+
+const response = await callLLMWithRetry({
+  messages: [
+    { role: 'system', content: config.systemPrompt },
+    { role: 'user', content: userPrompt }
+  ],
+  model: 'gemini-2.5-pro',
+  temperature: 0.5,
+  maxTokens: type === 'all' ? 2000 : 1000,  // Optimized for type-specific
+  responseFormat: 'json_object'
+});
 ```
 
 ---

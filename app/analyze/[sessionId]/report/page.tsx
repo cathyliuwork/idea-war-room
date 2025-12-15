@@ -56,6 +56,7 @@ export default function ReportPage() {
     if (user) {
       fetchReport();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, isLoading]);
 
   const fetchReport = async () => {

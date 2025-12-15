@@ -6,7 +6,7 @@ import { runMVTAAnalysis } from '@/lib/llm/prompts/mvta-analysis';
  * MVTA Analysis API Endpoint
  *
  * POST /api/sessions/[sessionId]/analyze
- * Executes MVTA red team analysis on structured idea + research
+ * Executes MVTA red team analysis on structured idea (independent of research)
  */
 
 export async function POST(
@@ -30,31 +30,11 @@ export async function POST(
       );
     }
 
-    // 2. Fetch research snapshot (OPTIONAL - may be null)
-    const { data: research } = await supabase
-      .from('research_snapshots')
-      .select('competitors, community_signals, regulatory_signals')
-      .eq('session_id', params.sessionId)
-      .maybeSingle();
-
-    // Create research context (empty arrays if research not available)
-    const researchContext = research
-      ? {
-          competitors: research.competitors || [],
-          community_signals: research.community_signals || [],
-          regulatory_signals: research.regulatory_signals || [],
-        }
-      : {
-          competitors: [],
-          community_signals: [],
-          regulatory_signals: [],
-        };
-
-    // 3. Run MVTA analysis (works with or without research)
+    // 2. Run MVTA analysis (completely independent - no research data)
     console.log(`Starting MVTA analysis for session ${params.sessionId}...`);
-    const mvtaReport = await runMVTAAnalysis(idea.structured_idea, researchContext);
+    const mvtaReport = await runMVTAAnalysis(idea.structured_idea);
 
-    // 4. Save damage report to database
+    // 3. Save damage report to database
     const { data: damageReport, error: reportError } = await supabase
       .from('damage_reports')
       .insert({
@@ -71,7 +51,7 @@ export async function POST(
       throw new Error(`Failed to save damage report: ${reportError.message}`);
     }
 
-    // 5. Update session status to 'completed' and set analysis_completed flag
+    // 4. Update session status to 'completed' and set analysis_completed flag
     await supabase
       .from('sessions')
       .update({
