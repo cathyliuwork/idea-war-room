@@ -1,7 +1,7 @@
 # F-09: Session History
 
-**Version**: 1.0
-**Last Updated**: 2025-12-08
+**Version**: 2.1
+**Last Updated**: 2025-12-15
 **Priority**: MEDIUM
 **Status**: ✅ Spec Complete
 
@@ -22,11 +22,11 @@
 **Used By**: None (terminal feature)
 
 **Implementation Status**:
-- [ ] PRD documented
-- [ ] Technical design complete
-- [ ] Tests defined
-- [ ] Implementation started
-- [ ] Implementation complete
+- [x] PRD documented
+- [x] Technical design complete
+- [x] Tests defined
+- [x] Implementation started
+- [x] Implementation complete
 - [ ] Tests passing
 - [ ] Deployed to production
 
@@ -52,8 +52,8 @@
 The Session History feature provides a chronological list of all MVTA analyses a user has completed. Each session shows:
 - **High Concept**: One-sentence idea summary
 - **Date**: When analysis was completed
-- **Status**: Intake, Research, Analysis, Completed, Failed
-- **Action**: "View Report" button
+- **Status**: Intake, Choice, Completed, Failed
+- **Action**: "View Report" button or "Resume" button depending on status
 
 **Use Cases**:
 - **Iterate on Ideas**: Revisit past analyses after pivoting
@@ -61,6 +61,14 @@ The Session History feature provides a chronological list of all MVTA analyses a
 - **Reference Past Work**: Share old reports with new advisors
 
 **Target Location**: Dashboard page (user's first view after login)
+
+**Note on Branching Workflow**:
+After completing intake, sessions have status='choice' where users can independently:
+- Run online research (sets research_completed=true)
+- Run MVTA analysis (sets analysis_completed=true, status='completed')
+- Do both in any order
+
+The session history shows completion of both phases independently via completion flags.
 
 ---
 
@@ -89,9 +97,11 @@ The Session History feature provides a chronological list of all MVTA analyses a
 - System: Creates new session, navigates to intake form
 
 **Step 5**: Resume incomplete session
-- User: Sees session with status "In Progress - Research"
+- User: Sees session with status "In Progress" (status='intake') or "Ready" (status='choice')
 - User: Clicks "Resume"
-- System: Navigates to last incomplete step (e.g., `/analyze/[session_id]/research`)
+- System: Navigates based on status:
+  - status='intake' → `/analyze/[session_id]/intake` (continue filling form)
+  - status='choice' → `/analyze/[session_id]/choice` (choose research or MVTA)
 
 ---
 
@@ -134,25 +144,29 @@ The Session History feature provides a chronological list of all MVTA analyses a
 2. **Pagination**: Show 10 sessions per page (load more button if > 10)
 3. **Status Display**:
    - `completed`: Show "View Report" button
-   - `intake`, `research`, `analysis`: Show "Resume" button
+   - `choice`: Show "Resume" button (navigates to choice page)
+   - `intake`: Show "Resume" button (navigates to intake form)
    - `failed`: Show "Retry Analysis" button
-4. **Relative Dates**: Use relative formatting ("2 days ago", "1 week ago")
+4. **Absolute Dates with Year**: Display full date and time (e.g., "Dec 14, 2024, 10:56 PM") to support cross-year session history
 5. **High Concept Truncation**: Max 100 characters (ellipsis if longer)
-6. **RLS Enforcement**: Users can only see their own sessions (enforced by database RLS)
+6. **User Isolation**: Users can only see their own sessions. **CRITICAL**: Service role key bypasses RLS, so queries MUST explicitly filter by `user_id`
 
 ---
 
 ### Acceptance Criteria
 
 - [ ] Dashboard displays list of user's past sessions
-- [ ] Sessions sorted by most recent first
-- [ ] Each session shows high concept, date, and status
-- [ ] "View Report" button navigates to report page
-- [ ] "Resume" button navigates to last incomplete step
+- [ ] Sessions sorted by most recent first (by created_at DESC)
+- [ ] Each session shows high concept, absolute date with year, and status
+- [ ] "View Report" button navigates to report page for completed sessions
+- [ ] "Resume" button navigates to correct page based on status (intake/choice)
 - [ ] "Analyze New Idea" button creates new session
 - [ ] Empty state shown for users with no sessions
 - [ ] Pagination works for users with > 10 sessions
-- [ ] RLS enforced (users can't see others' sessions)
+- [ ] **CRITICAL**: User isolation enforced (users can't see others' sessions)
+  - Test by logging in as different users
+  - Verify each user only sees their own sessions
+  - Verify session counts are per-user, not global
 
 ---
 
@@ -173,10 +187,11 @@ The Session History feature provides a chronological list of all MVTA analyses a
 interface SessionListResponse {
   sessions: Array<{
     id: string;
-    status: 'intake' | 'research' | 'analysis' | 'completed' | 'failed';
+    status: 'intake' | 'choice' | 'completed' | 'failed';
+    research_completed: boolean;
+    analysis_completed: boolean;
     created_at: string;
     high_concept: string;
-    has_report: boolean;
   }>;
   total_count: number;
 }
@@ -200,16 +215,18 @@ export async function GET(request: Request) {
   }
 
   // Fetch sessions with ideas
+  // CRITICAL: Service role key bypasses RLS, must explicitly filter by user_id
   const { data: sessions, error } = await supabase
     .from('sessions')
     .select(`
       id,
       status,
+      research_completed,
+      analysis_completed,
       created_at,
-      ideas!inner(structured_idea),
-      damage_reports(id)
+      ideas!inner(structured_idea)
     `)
-    .eq('user_id', user.id)
+    .eq('user_id', user.id)  // CRITICAL: Filter by current user
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
 
@@ -217,19 +234,37 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Count total sessions
+  // Count total sessions for current user
   const { count } = await supabase
     .from('sessions')
     .select('*', { count: 'exact', head: true })
-    .eq('user_id', user.id);
+    .eq('user_id', user.id);  // CRITICAL: Filter by current user
 
-  const formattedSessions = sessions.map(s => ({
-    id: s.id,
-    status: s.status,
-    created_at: s.created_at,
-    high_concept: s.ideas[0]?.structured_idea?.high_concept || 'Untitled Idea',
-    has_report: s.damage_reports.length > 0
-  }));
+  // Format response with smart title generation
+  // Note: Supabase join returns ideas as OBJECT (not array) with structure: { structured_idea: {...} }
+  const formattedSessions = sessions.map(s => {
+    const structuredIdea = s.ideas?.structured_idea;  // Object access, not array[0]
+
+    // Smart title fallback: high_concept → value_proposition → session ID
+    let title: string;
+    if (structuredIdea?.high_concept) {
+      title = structuredIdea.high_concept;
+    } else if (structuredIdea?.value_proposition) {
+      title = structuredIdea.value_proposition.substring(0, 50) +
+              (structuredIdea.value_proposition.length > 50 ? '...' : '');
+    } else {
+      title = `Idea Analysis [${s.id}]`;  // Full session ID as last resort
+    }
+
+    return {
+      id: s.id,
+      status: s.status,
+      research_completed: s.research_completed,
+      analysis_completed: s.analysis_completed,
+      created_at: s.created_at,
+      high_concept: title
+    };
+  });
 
   return NextResponse.json({
     sessions: formattedSessions,
@@ -334,23 +369,23 @@ export default function SessionCard({ session }: { session: any }) {
   const router = useRouter();
 
   const getStatusBadge = () => {
-    const statusColors = {
-      completed: 'bg-green-100 text-green-800',
-      failed: 'bg-red-100 text-red-800',
-      intake: 'bg-yellow-100 text-yellow-800',
-      research: 'bg-blue-100 text-blue-800',
-      analysis: 'bg-purple-100 text-purple-800'
+    const statusConfig = {
+      intake: { label: 'In Progress', color: 'bg-yellow-100 text-yellow-800' },
+      choice: { label: 'Ready', color: 'bg-blue-100 text-blue-800' },
+      completed: { label: 'Completed', color: 'bg-green-100 text-green-800' },
+      failed: { label: 'Failed', color: 'bg-red-100 text-red-800' }
     };
 
+    const config = statusConfig[session.status];
     return (
-      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[session.status]}`}>
-        {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
+      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${config.color}`}>
+        {config.label}
       </span>
     );
   };
 
   const getActionButton = () => {
-    if (session.status === 'completed' && session.has_report) {
+    if (session.status === 'completed') {
       return (
         <button
           onClick={() => router.push(`/analyze/${session.id}/report`)}
@@ -372,10 +407,14 @@ export default function SessionCard({ session }: { session: any }) {
       );
     }
 
-    // In progress
+    // intake or choice - Resume button
+    const resumePath = session.status === 'intake'
+      ? `/analyze/${session.id}/intake`
+      : `/analyze/${session.id}/choice`;
+
     return (
       <button
-        onClick={() => router.push(`/analyze/${session.id}/${session.status}`)}
+        onClick={() => router.push(resumePath)}
         className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
       >
         Resume
@@ -385,15 +424,16 @@ export default function SessionCard({ session }: { session: any }) {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Yesterday';
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-    return date.toLocaleDateString();
+    // Display absolute date with year and time in user's local timezone
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+    // Example output: "Dec 14, 2024, 10:56 PM"
   };
 
   return (
@@ -408,6 +448,12 @@ export default function SessionCard({ session }: { session: any }) {
           <div className="flex items-center gap-3 text-sm text-gray-600">
             <span>{formatDate(session.created_at)}</span>
             {getStatusBadge()}
+            {session.research_completed && (
+              <span className="text-xs text-green-600">✓ Research</span>
+            )}
+            {session.analysis_completed && (
+              <span className="text-xs text-green-600">✓ MVTA</span>
+            )}
           </div>
         </div>
         <div className="ml-4">
@@ -417,6 +463,70 @@ export default function SessionCard({ session }: { session: any }) {
     </div>
   );
 }
+```
+
+---
+
+## Security & Data Isolation
+
+### Critical Security Issue: Service Role Key Bypasses RLS
+
+**Problem**: The application uses Supabase Service Role Key for server-side database access, which bypasses Row Level Security (RLS) policies by default.
+
+**Impact**: Without explicit filtering, ALL users would see ALL sessions regardless of ownership.
+
+**Solution**: Every query MUST explicitly filter by `user_id`:
+
+```typescript
+// WRONG - Service role key bypasses RLS
+const { data } = await supabase
+  .from('sessions')
+  .select('*');  // Returns ALL sessions for ALL users!
+
+// CORRECT - Explicit user_id filtering
+const { data } = await supabase
+  .from('sessions')
+  .select('*')
+  .eq('user_id', user.id);  // Only current user's sessions
+```
+
+### Implementation Checklist
+
+For ANY endpoint that queries user data:
+
+- [ ] Call `createAuthenticatedSupabaseClient()` to get authenticated user
+- [ ] Verify `user` is not null (return 401 if missing)
+- [ ] Add `.eq('user_id', user.id)` to ALL queries that fetch user-scoped data
+- [ ] Add `.eq('user_id', user.id)` to count/aggregate queries
+- [ ] Test with multiple users to verify isolation
+
+**Testing Multi-User Isolation**:
+1. Login as User A, create sessions
+2. Logout, login as User B
+3. Verify User B does NOT see User A's sessions
+4. Create sessions as User B
+5. Verify each user only sees their own data
+
+### Supabase Join Behavior
+
+**Important**: Supabase's `.select()` with joins returns different data structures:
+
+```typescript
+// Without join - returns array of sessions
+.select('*')  // → sessions: [{...}, {...}]
+
+// With INNER join - returns sessions with nested object (NOT array!)
+.select('ideas!inner(structured_idea)')  // → session.ideas = { structured_idea: {...} }
+```
+
+**Incorrect** (treats as array):
+```typescript
+const highConcept = session.ideas[0]?.structured_idea?.high_concept;  // ❌ undefined!
+```
+
+**Correct** (treats as object):
+```typescript
+const highConcept = session.ideas?.structured_idea?.high_concept;  // ✅ Works!
 ```
 
 ---
@@ -485,20 +595,49 @@ describe('GET /api/sessions', () => {
     expect(data.total_count).toBe(3);
   });
 
-  it('should enforce RLS (only own sessions)', async () => {
-    const userA = await createTestUser();
-    const userB = await createTestUser();
+  it('should enforce user isolation (CRITICAL SECURITY TEST)', async () => {
+    const userA = await createTestUser('alice@example.com');
+    const userB = await createTestUser('bob@example.com');
 
-    await createTestSession(userA);
-    await createTestSession(userB);
+    // Create sessions for both users
+    const sessionA1 = await createTestSession(userA);
+    const sessionA2 = await createTestSession(userA);
+    const sessionB1 = await createTestSession(userB);
 
-    // User A should only see their session
-    const response = await fetch('/api/sessions', {
+    // User A should only see their 2 sessions
+    const responseA = await fetch('/api/sessions', {
       headers: { Authorization: `Bearer ${userA.token}` }
     });
+    const dataA = await responseA.json();
+    expect(dataA.sessions).toHaveLength(2);
+    expect(dataA.total_count).toBe(2);
+    expect(dataA.sessions.map(s => s.id)).toContain(sessionA1.id);
+    expect(dataA.sessions.map(s => s.id)).toContain(sessionA2.id);
+    expect(dataA.sessions.map(s => s.id)).not.toContain(sessionB1.id);
 
+    // User B should only see their 1 session
+    const responseB = await fetch('/api/sessions', {
+      headers: { Authorization: `Bearer ${userB.token}` }
+    });
+    const dataB = await responseB.json();
+    expect(dataB.sessions).toHaveLength(1);
+    expect(dataB.total_count).toBe(1);
+    expect(dataB.sessions[0].id).toBe(sessionB1.id);
+    expect(dataB.sessions.map(s => s.id)).not.toContain(sessionA1.id);
+    expect(dataB.sessions.map(s => s.id)).not.toContain(sessionA2.id);
+  });
+
+  it('should return sessions with absolute dates and year', async () => {
+    await createTestSession();
+
+    const response = await fetch('/api/sessions');
     const data = await response.json();
-    expect(data.sessions).toHaveLength(1);
+
+    // Verify high_concept is populated (not fallback ID)
+    expect(data.sessions[0].high_concept).not.toMatch(/^Idea Analysis \[/);
+
+    // Verify created_at is ISO string
+    expect(data.sessions[0].created_at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 });
 ```
@@ -506,6 +645,37 @@ describe('GET /api/sessions', () => {
 ---
 
 ## Notes
+
+### Implementation Lessons Learned
+
+**1. Service Role Key Security Issue (Dec 15, 2025)**
+
+During implementation, discovered critical security issue: Service role key bypasses RLS by default. Initial implementation relied on RLS policies without explicit user_id filtering, causing all users to see all sessions.
+
+**Root Cause**: Supabase service role key has admin privileges and ignores RLS policies.
+
+**Fix**: Added explicit `.eq('user_id', user.id)` to all queries.
+
+**Lesson**: Never rely on RLS alone when using service role key. Always explicitly filter by user_id.
+
+**2. Supabase Join Returns Object, Not Array (Dec 15, 2025)**
+
+Supabase's INNER join syntax `ideas!inner(structured_idea)` returns a nested object, not an array:
+- Expected: `session.ideas[0].structured_idea`
+- Actual: `session.ideas.structured_idea`
+
+Caused initial "Untitled Idea" bug where all sessions showed fallback title.
+
+**Lesson**: Always test Supabase join queries and verify data structure before assuming array access.
+
+**3. Date Format Evolution (Dec 15, 2025)**
+
+Initial spec called for relative dates ("2 days ago"). Changed to absolute dates with year ("Dec 14, 2024, 10:56 PM") for better UX across years.
+
+**Rationale**:
+- Users may reference sessions from previous years
+- Absolute dates are clearer for cross-year comparisons
+- Timezone displayed is user's local timezone (browser-based)
 
 ### Future Enhancements
 
@@ -521,6 +691,7 @@ describe('GET /api/sessions', () => {
 - No session deletion (users can't remove old sessions)
 - No session renaming (high concept is fixed)
 - Limited to 10 sessions per page (manual pagination)
+- Dates shown in browser's local timezone (may confuse users in different timezones)
 
 ### References
 

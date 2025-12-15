@@ -2,7 +2,9 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import SessionCard from './components/SessionCard';
+import EmptyState from './components/EmptyState';
 
 /**
  * Dashboard Page
@@ -13,12 +15,33 @@ import { useEffect } from 'react';
 export default function Dashboard() {
   const { user, isLoading, signOut } = useAuth();
   const router = useRouter();
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(true);
 
   useEffect(() => {
     if (!isLoading && !user) {
       router.push('/api/auth/mock/login');
     }
   }, [user, isLoading, router]);
+
+  // Fetch sessions when user is loaded
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchSessions = async () => {
+      try {
+        const res = await fetch('/api/sessions');
+        const data = await res.json();
+        setSessions(data.sessions || []);
+      } catch (error) {
+        console.error('Failed to fetch sessions:', error);
+      } finally {
+        setSessionsLoading(false);
+      }
+    };
+
+    fetchSessions();
+  }, [user]);
 
   if (isLoading) {
     return (
@@ -31,6 +54,12 @@ export default function Dashboard() {
   if (!user) {
     return null;
   }
+
+  const handleNewAnalysis = async () => {
+    const res = await fetch('/api/sessions/create', { method: 'POST' });
+    const data = await res.json();
+    router.push(`/analyze/${data.session_id}/intake`);
+  };
 
   return (
     <div className="min-h-screen bg-bg-secondary">
@@ -88,24 +117,29 @@ export default function Dashboard() {
 
           <button
             className="px-6 py-3 bg-brand-primary text-white font-semibold rounded-lg hover:bg-brand-hover transition-colors shadow-sm disabled:opacity-50"
-            onClick={async () => {
-              const res = await fetch('/api/sessions/create', { method: 'POST' });
-              const data = await res.json();
-              router.push(`/analyze/${data.session_id}/intake`);
-            }}
+            onClick={handleNewAnalysis}
           >
             Start New Analysis
           </button>
         </div>
 
-        {/* Recent Sessions (placeholder) */}
+        {/* Recent Sessions */}
         <div className="bg-bg-primary rounded-lg shadow-card p-8">
           <h3 className="text-lg font-semibold text-text-primary mb-4">
             Recent Sessions
           </h3>
-          <p className="text-text-secondary text-sm">
-            No analysis sessions yet. Start your first one above!
-          </p>
+
+          {sessionsLoading ? (
+            <p className="text-text-secondary text-sm">Loading sessions...</p>
+          ) : sessions.length === 0 ? (
+            <EmptyState onNewAnalysis={handleNewAnalysis} />
+          ) : (
+            <div className="space-y-4">
+              {sessions.map((session) => (
+                <SessionCard key={session.id} session={session} />
+              ))}
+            </div>
+          )}
         </div>
       </main>
     </div>
