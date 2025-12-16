@@ -30,7 +30,9 @@ export async function GET(request: NextRequest) {
     await upsertUserProfile(payload);
 
     // Set session cookie and redirect to dashboard
-    const response = NextResponse.redirect(new URL('/dashboard', request.url));
+    // Use NEXT_PUBLIC_APP_URL for redirect to ensure correct domain in Docker/production
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.url;
+    const response = NextResponse.redirect(new URL('/dashboard', baseUrl));
     setSessionCookie(response, token);
 
     return response;

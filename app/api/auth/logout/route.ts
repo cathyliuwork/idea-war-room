@@ -14,7 +14,9 @@ export async function POST(request: NextRequest) {
       ? '/api/auth/mock/login'
       : process.env.NEXT_PUBLIC_PARENT_LOGIN_URL || '/';
 
-  const response = NextResponse.redirect(new URL(loginUrl, request.url));
+  // Use NEXT_PUBLIC_APP_URL for redirect to ensure correct domain in Docker/production
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.url;
+  const response = NextResponse.redirect(new URL(loginUrl, baseUrl));
   clearSessionCookie(response);
 
   return response;
