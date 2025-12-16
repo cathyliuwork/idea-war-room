@@ -4,11 +4,14 @@
 # 使用 Node.js 22 LTS（活跃支持到 2027-04，固定版本确保构建可重现）
 FROM node:22.20.0-slim AS builder
 
-# 安装构建依赖（OpenSSL + CA证书）
+# 安装构建依赖（OpenSSL + CA证书 + 编译工具）
 RUN apt-get update && \
     apt-get install -y \
       openssl \
-      ca-certificates && \
+      ca-certificates \
+      python3 \
+      make \
+      g++ && \
     rm -rf /var/lib/apt/lists/*
 
 # 设置工作目录
