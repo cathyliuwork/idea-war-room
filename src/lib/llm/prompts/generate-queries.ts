@@ -277,9 +277,9 @@ Generate research queries to validate/challenge these assumptions and understand
       { role: 'system', content: config.systemPrompt },
       { role: 'user', content: userPrompt },
     ],
-    model: 'gemini-2.5-pro',
+    model: 'grok-4-fast',
     temperature: 0.5,
-    maxTokens: type === 'all' ? 3000 : 3000, // Increased to prevent truncation
+    maxTokens: 5000, // Increased to 5000 per official docs support
     responseFormat: 'json_object',
   });
 

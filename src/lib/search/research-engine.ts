@@ -37,7 +37,8 @@ import { SEARCH_RESULTS_PER_QUERY } from '@/lib/constants/research';
  */
 export async function conductResearch(
   structuredIdea: StructuredIdea,
-  type: 'competitor'
+  type: 'competitor',
+  reuseQueries?: string[]
 ): Promise<CompetitorResearch>;
 
 /**
@@ -45,7 +46,8 @@ export async function conductResearch(
  */
 export async function conductResearch(
   structuredIdea: StructuredIdea,
-  type: 'community'
+  type: 'community',
+  reuseQueries?: string[]
 ): Promise<CommunityResearch>;
 
 /**
@@ -53,7 +55,8 @@ export async function conductResearch(
  */
 export async function conductResearch(
   structuredIdea: StructuredIdea,
-  type: 'regulatory'
+  type: 'regulatory',
+  reuseQueries?: string[]
 ): Promise<RegulatoryResearch>;
 
 /**

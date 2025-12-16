@@ -160,7 +160,7 @@ Execute MVTA red team analysis. Output ONLY the JSON.`;
     ],
     model: 'grok-4-fast', // Switched from gemini-2.5-pro due to 500 errors
     temperature: 0.7, // Creative but consistent
-    maxTokens: 4000, // Reduced from 8000 to avoid API errors
+    maxTokens: 10000, // Increased to 10000 - official docs support up to 30000
     responseFormat: 'json_object',
   });
 

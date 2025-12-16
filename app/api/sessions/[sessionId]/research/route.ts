@@ -27,7 +27,7 @@ export async function POST(
       const body = await request.json();
       if (body.reuse_queries && Array.isArray(body.reuse_queries)) {
         reuseQueries = body.reuse_queries;
-        console.log(`♻️ Received ${reuseQueries.length} queries to reuse`);
+        console.log(`♻️ Received ${body.reuse_queries.length} queries to reuse`);
       }
     } catch (e) {
       // No body or invalid JSON, continue without reuse_queries

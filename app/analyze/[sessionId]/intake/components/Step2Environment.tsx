@@ -25,30 +25,15 @@ export default function Step2Environment({ form }: Step2EnvironmentProps) {
     return 'text-text-tertiary';
   };
 
-  const fillExample = () => {
-    form.setValue('environment.user_persona', 'Solo founders and early-stage entrepreneurs (25-45 years old) who are technical enough to understand product development but lack market validation experience');
-    form.setValue('environment.competitive_landscape', 'Similar tools: ProductHunt validation, BetaList feedback, Reddit communities. None combine automated research with adversarial analysis.');
-    form.setValue('environment.regulatory_context', '');
-  };
-
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-start">
-        <div>
-          <h2 className="text-2xl font-bold text-text-primary mb-2">
-            Environment & Context
-          </h2>
-          <p className="text-text-secondary">
-            Help us understand your target market and competitive landscape.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={fillExample}
-          className="px-4 py-2 text-sm border border-brand-primary text-brand-primary rounded-lg hover:bg-brand-light transition-colors"
-        >
-          Fill Example
-        </button>
+      <div>
+        <h2 className="text-2xl font-bold text-text-primary mb-2">
+          Environment & Context
+        </h2>
+        <p className="text-text-secondary">
+          Help us understand your target market and competitive landscape.
+        </p>
       </div>
 
       {/* User Persona */}

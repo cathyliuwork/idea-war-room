@@ -25,30 +25,15 @@ export default function Step1CoreConcept({ form }: Step1CoreConceptProps) {
     return 'text-text-tertiary';
   };
 
-  const fillExample = () => {
-    form.setValue('high_concept', 'A platform that helps solo founders validate startup ideas through AI-powered adversarial analysis');
-    form.setValue('value_proposition', 'Founders spend weeks gathering feedback, only to realize critical flaws too late. We help solo founders and early-stage entrepreneurs identify risks before investing time and money.');
-    form.setValue('success_metric_18m', '10,000 validated ideas with 70% accuracy on risk prediction');
-  };
-
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-start">
-        <div>
-          <h2 className="text-2xl font-bold text-text-primary mb-2">
-            Core Concept
-          </h2>
-          <p className="text-text-secondary">
-            Let&apos;s start with the essentials. Describe your idea in a clear and concise way.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={fillExample}
-          className="px-4 py-2 text-sm border border-brand-primary text-brand-primary rounded-lg hover:bg-brand-light transition-colors"
-        >
-          Fill Example
-        </button>
+      <div>
+        <h2 className="text-2xl font-bold text-text-primary mb-2">
+          Core Concept
+        </h2>
+        <p className="text-text-secondary">
+          Let&apos;s start with the essentials. Describe your idea in a clear and concise way.
+        </p>
       </div>
 
       {/* High Concept */}

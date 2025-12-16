@@ -21,46 +21,15 @@ export default function Step3AssumptionsAssets({ form }: Step3AssumptionsAssetsP
   const keyAssets = watch('assets.key_assets') || [];
   const brandNarrative = watch('assets.brand_narrative') || [];
 
-  const fillExample = () => {
-    setValue('assumptions.market', [
-      'Solo founders spend 2 hours/day gathering feedback',
-      'Founders are willing to pay $20/month for validation tools'
-    ], { shouldValidate: true });
-    setValue('assumptions.technical', [
-      'LLMs can accurately analyze startup ideas with proper prompting'
-    ], { shouldValidate: true });
-    setValue('assumptions.business_model', [
-      'SaaS subscription model works for validation tools',
-      'Founders prefer self-service over consulting'
-    ], { shouldValidate: true });
-    setValue('assets.key_assets', [
-      '10 years of experience in AI/ML',
-      'Network of 500+ founders for beta testing'
-    ], { shouldValidate: true });
-    setValue('assets.brand_narrative', [
-      'Founded by Y Combinator alumni',
-      'Previously built and sold a successful SaaS product'
-    ], { shouldValidate: true });
-  };
-
   return (
     <div className="space-y-8">
-      <div className="flex justify-between items-start">
-        <div>
-          <h2 className="text-2xl font-bold text-text-primary mb-2">
-            Assumptions & Assets
-          </h2>
-          <p className="text-text-secondary">
-            These fields are optional but help us provide a more comprehensive analysis. Skip any that don&apos;t apply.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={fillExample}
-          className="px-4 py-2 text-sm border border-brand-primary text-brand-primary rounded-lg hover:bg-brand-light transition-colors"
-        >
-          Fill Example
-        </button>
+      <div>
+        <h2 className="text-2xl font-bold text-text-primary mb-2">
+          Assumptions & Assets
+        </h2>
+        <p className="text-text-secondary">
+          These fields are optional but help us provide a more comprehensive analysis. Skip any that don&apos;t apply.
+        </p>
       </div>
 
       {/* Assumptions Section */}
