@@ -25,10 +25,12 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # 1. 复制依赖定义文件
 COPY package.json pnpm-lock.yaml ./
 
-# 2. 启用 pnpm 并安装依赖
-RUN corepack enable && \
+# 2. 启用 pnpm 并安装依赖 (允许构建脚本)
+# Create .npmrc to enable build scripts
+RUN echo "enable-pre-post-scripts=true" > .npmrc && \
+    corepack enable && \
     corepack prepare pnpm@10.15.1 --activate && \
-    pnpm install --frozen-lockfile --prod=false
+    pnpm install --frozen-lockfile --prod=false --ignore-scripts=false
 
 # 3. 显式复制 tsconfig.json（确保路径别名解析正常）
 COPY tsconfig.json ./
