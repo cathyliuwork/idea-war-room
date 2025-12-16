@@ -38,6 +38,9 @@ COPY tsconfig.json ./
 # 4. 复制应用源代码
 COPY . .
 
+# 4.5. 确保 public 目录存在（即使为空）
+RUN mkdir -p public
+
 # 5. 构建 Next.js 应用（生成 .next 目录）
 RUN pnpm build
 
