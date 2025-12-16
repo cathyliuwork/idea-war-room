@@ -34,8 +34,10 @@ export async function GET(request: NextRequest) {
     }
 
     const token = generateMockJWT(user);
+    // Use NEXT_PUBLIC_APP_URL for redirect to ensure correct domain in Docker/production
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.url;
     return NextResponse.redirect(
-      new URL(`/api/auth/callback?token=${token}`, request.url)
+      new URL(`/api/auth/callback?token=${token}`, baseUrl)
     );
   }
 
