@@ -1,76 +1,75 @@
-# Multi-stage build for Idea War Room Next.js application
-# Optimized for AI Builders Deployment (256 MB RAM limit)
+# ==================================================
+# 阶段 1: 构建阶段（Builder）
+# ==================================================
+# 使用 Node.js 22 LTS（活跃支持到 2027-04，固定版本确保构建可重现）
+FROM node:22.20.0-slim AS builder
 
-# ============================================================================
-# Stage 1: Dependencies
-# ============================================================================
-FROM node:20-alpine AS deps
+# 安装构建依赖（OpenSSL + CA证书）
+RUN apt-get update && \
+    apt-get install -y \
+      openssl \
+      ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@10.15.1 --activate
-
+# 设置工作目录
 WORKDIR /app
 
-# Copy package files
+# 设置环境变量优化内存使用
+ENV NODE_ENV=production
+ENV NODE_OPTIONS="--max-old-space-size=512"
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# 1. 复制依赖定义文件
 COPY package.json pnpm-lock.yaml ./
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
+# 2. 启用 pnpm 并安装依赖
+RUN corepack enable && \
+    corepack prepare pnpm@10.15.1 --activate && \
+    pnpm install --frozen-lockfile --prod=false
 
-# ============================================================================
-# Stage 2: Builder
-# ============================================================================
-FROM node:20-alpine AS builder
+# 3. 显式复制 tsconfig.json（确保路径别名解析正常）
+COPY tsconfig.json ./
 
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@10.15.1 --activate
-
-WORKDIR /app
-
-# Copy dependencies from deps stage
-COPY --from=deps /app/node_modules ./node_modules
-
-# Copy application source
+# 4. 复制应用源代码
 COPY . .
 
-# Set environment variables for build
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV NODE_ENV=production
-
-# Build Next.js application
+# 5. 构建 Next.js 应用（生成 .next 目录）
 RUN pnpm build
 
-# ============================================================================
-# Stage 3: Runner
-# ============================================================================
-FROM node:20-alpine AS runner
+# ==================================================
+# 阶段 2: 运行阶段（Runner）
+# ==================================================
+FROM node:22.20.0-slim AS runner
 
+# 安装运行时依赖（OpenSSL 和 CA 证书）
+RUN apt-get update && \
+    apt-get install -y openssl ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+# 设置工作目录
 WORKDIR /app
 
-# Set production environment
+# 设置环境为生产环境
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Create non-root user for security
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+# 创建非 root 用户（安全最佳实践）
+# Debian 语法
+RUN groupadd --gid 1001 nodejs && \
+    useradd --uid 1001 --gid nodejs --shell /bin/bash --create-home nextjs
 
-# Copy necessary files from builder for standalone mode
-# Note: Next.js standalone output bundles all dependencies into .next/standalone
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+# 复制构建产物（仅复制必需文件）
+# standalone 模式会生成自包含的服务器
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Set ownership to nextjs user
-RUN chown -R nextjs:nodejs /app
-
-# Switch to non-root user
+# 切换到非 root 用户
 USER nextjs
 
-# Expose port (will be overridden by PORT env var at runtime)
+# 暴露端口（文档用途，实际端口由 PORT 环境变量决定）
 EXPOSE 3000
 
-# Start Next.js server using PORT environment variable
-# CRITICAL: Use shell form (sh -c) to ensure environment variable expansion
-# Next.js standalone mode creates server.js at the root
-CMD sh -c "node server.js"
+# 启动命令
+# standalone 模式生成的 server.js 会自动读取 PORT 环境变量
+CMD ["node", "server.js"]
