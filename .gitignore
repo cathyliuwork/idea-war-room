@@ -222,6 +222,12 @@ supabase/.branches/
 *.pfx
 .npmrc
 
+# Deployment configuration (contains sensitive environment variables)
+deploy-config.json
+
+# Keep the example file
+!deploy-config.json.example
+
 # ============================================================================
 # EDITOR & IDE
 # ============================================================================

@@ -404,11 +404,68 @@ sequenceDiagram
 ## Deployment Architecture
 
 ### Environments
+
 1. **Development**: Local Next.js dev server + Supabase local
-2. **Staging**: Vercel preview deployment (auto-deploy from PR branches)
-3. **Production**: Vercel production (auto-deploy from main branch)
+2. **Staging/Preview**: AI Builders Deployment (experimental feature)
+3. **Production**: Vercel production (optional, for custom domains)
+
+### AI Builder Deployment (Primary Deployment Method)
+
+The project uses AI Builders Deployment as the primary deployment platform. This experimental feature provides:
+
+- **Free Hosting**: 12 months from first successful deployment
+- **Simple Deployment**: One-click deployment to `ai-builders.space`
+- **Resource Limits**: 256 MB RAM (nano containers)
+- **Service Limit**: Maximum 2 services per user (default)
+
+#### Technical Requirements
+
+**Dockerfile Configuration:**
+- Single process serving both API and static files
+- Must honor `PORT` environment variable (set by Koyeb at runtime)
+- CMD instruction must use shell form: `CMD sh -c "next start -p ${PORT:-3000}"`
+- Optimized for 256 MB RAM limit
+
+**Environment Variables:**
+- `AI_BUILDER_TOKEN`: Automatically injected by platform
+- `PORT`: Set by Koyeb at runtime (must be honored)
+- Other variables: Configured via `env_vars` in deployment request
+
+**Deployment Process:**
+1. Ensure Dockerfile and .dockerignore exist in project root
+2. Configure deployment parameters in `deploy-config.json`
+3. Push all changes to GitHub (deployment pulls from repo)
+4. Call AI Builders Deployment API or use AI assistant
+5. Wait 5-10 minutes for provisioning
+6. Monitor status via Deployment Portal or API
+
+**Public URL:**
+- Format: `https://{service-name}.ai-builders.space`
+- Example: `https://idea-war-room.ai-builders.space`
+
+#### Deployment Architecture Diagram
+
+```mermaid
+flowchart TD
+    A[Developer] -->|git push| B[GitHub Repository]
+    A -->|Deploy request| C[AI Builders API]
+    C -->|Clone repo| B
+    C -->|Build Docker image| D[Koyeb Platform]
+    D -->|Run container| E[Docker Container]
+    E -->|Inject AI_BUILDER_TOKEN| E
+    E -->|Set PORT variable| E
+    E -->|Expose| F[Public URL]
+    F -->|https://service.ai-builders.space| G[Users]
+
+    style C fill:#e1f5ff
+    style D fill:#fff3cd
+    style E fill:#d1ecf1
+    style F fill:#d4edda
+```
 
 ### Environment Variables
+
+#### Development (.env.local)
 ```bash
 # Supabase
 NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
@@ -416,14 +473,48 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJxxx...
 SUPABASE_SERVICE_ROLE_KEY=eyJxxx... # Server-side only
 
 # AI Builders API
-AI_BUILDERS_API_KEY=xxx # Server-side only
+AI_BUILDER_TOKEN=sk_xxx... # For local development
 AI_BUILDERS_API_URL=https://space.ai-builders.com/backend
 
+# Authentication
+AUTH_MODE=mock # or jwt
+JWT_SECRET=your-shared-secret-key
+PARENT_LOGIN_URL=https://parent.example.com/login
+
 # App
-NEXT_PUBLIC_APP_URL=https://ideawarroom.com
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+NODE_ENV=development
+```
+
+#### Production (AI Builders Deployment)
+```bash
+# Automatically injected by platform
+AI_BUILDER_TOKEN=sk_xxx... # Injected by deployment platform
+PORT=8000 # Set by Koyeb at runtime
+
+# Required via env_vars in deploy-config.json
+NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJxxx...
+SUPABASE_SERVICE_ROLE_KEY=eyJxxx...
+AUTH_MODE=jwt
+JWT_SECRET=your-shared-secret-key
+PARENT_LOGIN_URL=https://parent.example.com/login
+NEXT_PUBLIC_APP_URL=https://idea-war-room.ai-builders.space
+NODE_ENV=production
 ```
 
 ### CI/CD Pipeline
+
+#### AI Builder Deployment (Primary)
+1. Developer commits and pushes changes to GitHub
+2. Developer triggers deployment via API or AI assistant
+3. Platform clones repository from specified branch
+4. Docker image built using Dockerfile
+5. Container deployed to Koyeb with injected environment variables
+6. Service available at `https://{service-name}.ai-builders.space`
+7. Monitor status via Deployment Portal or API
+
+#### Optional: Vercel Deployment
 1. Push to branch → Vercel preview deployment
 2. PR merge to main → Vercel production deployment
 3. Automatic TypeScript type checking

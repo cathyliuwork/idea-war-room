@@ -1,0 +1,18 @@
+{
+  "repo_url": "https://github.com/cathyliuwork/idea-war-room.git",
+  "service_name": "idea-war-room",
+  "branch": "main",
+  "port": 3000,
+  "env_vars": {
+    "NEXT_PUBLIC_SUPABASE_URL": "https://YOUR_PROJECT.supabase.co",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJ_YOUR_ANON_KEY",
+    "SUPABASE_SERVICE_ROLE_KEY": "eyJ_YOUR_SERVICE_ROLE_KEY",
+    "AUTH_MODE": "jwt",
+    "JWT_SECRET": "your-shared-secret-key-minimum-32-characters-long",
+    "PARENT_LOGIN_URL": "https://parent.example.com/login",
+    "NEXT_PUBLIC_PARENT_LOGIN_URL": "https://parent.example.com/login",
+    "NEXT_PUBLIC_APP_URL": "https://idea-war-room.ai-builders.space",
+    "NODE_ENV": "production",
+    "AI_BUILDERS_API_URL": "https://space.ai-builders.com/backend"
+  }
+}
