@@ -47,11 +47,12 @@ const DEFAULT_MAX_RESULTS = 6;
  * @throws Error if API call fails or API key is missing
  */
 export async function search(request: SearchRequest): Promise<SearchResponse> {
-  const apiKey = process.env.AI_BUILDERS_API_KEY;
+  // Support both AI_BUILDERS_API_KEY (local dev) and AI_BUILDER_TOKEN (platform injected)
+  const apiKey = process.env.AI_BUILDERS_API_KEY || process.env.AI_BUILDER_TOKEN;
   const apiUrl = process.env.AI_BUILDERS_API_URL || 'https://space.ai-builders.com/backend';
 
   if (!apiKey) {
-    throw new Error('AI_BUILDERS_API_KEY not configured');
+    throw new Error('AI_BUILDERS_API_KEY or AI_BUILDER_TOKEN not configured');
   }
 
   // API endpoint: POST /v1/search/ (note trailing slash)

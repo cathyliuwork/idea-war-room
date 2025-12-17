@@ -29,7 +29,7 @@
  *
  * Adjust this value to balance between information richness and API stability.
  */
-export const SEARCH_RESULTS_PER_QUERY = 8;
+export const SEARCH_RESULTS_PER_QUERY = 5;
 
 // ============================================================================
 // RESEARCH TYPE METADATA
