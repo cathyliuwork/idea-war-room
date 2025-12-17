@@ -1,0 +1,203 @@
+/**
+ * LLM Error Reporter
+ *
+ * Generates detailed error reports for debugging LLM API failures
+ */
+
+import fs from 'fs';
+import path from 'path';
+
+interface LLMErrorReport {
+  timestamp: string;
+  model: string;
+  errorType: string;
+  httpStatus?: number;
+  errorMessage: string;
+  request: {
+    messages: Array<{ role: string; content: string }>;
+    temperature: number;
+    maxTokens: number;
+    responseFormat?: string;
+  };
+  response?: {
+    statusText?: string;
+    body?: string;
+    headers?: Record<string, string>;
+  };
+  estimatedPromptSize: {
+    characters: number;
+    estimatedTokens: number;
+  };
+  fullPrompt: string;
+  stackTrace?: string;
+}
+
+/**
+ * Generate detailed error report for LLM failures
+ */
+export async function reportLLMError(params: {
+  model: string;
+  messages: Array<{ role: string; content: string }>;
+  temperature: number;
+  maxTokens: number;
+  responseFormat?: string;
+  error: Error;
+  httpStatus?: number;
+  responseText?: string;
+  responseHeaders?: Headers;
+}): Promise<void> {
+  try {
+    const timestamp = new Date().toISOString();
+    const formattedTimestamp = timestamp.replace(/[:.]/g, '-');
+
+    // Calculate prompt size
+    const fullPrompt = params.messages.map(m => `[${m.role}]\n${m.content}`).join('\n\n---\n\n');
+    const characters = fullPrompt.length;
+    const estimatedTokens = Math.ceil(characters / 4);
+
+    // Determine error type
+    let errorType = 'UNKNOWN_ERROR';
+    if (params.error.message.includes('500')) errorType = 'INTERNAL_SERVER_ERROR';
+    else if (params.error.message.includes('429')) errorType = 'RATE_LIMIT';
+    else if (params.error.message.includes('timeout')) errorType = 'TIMEOUT';
+    else if (params.error.message.includes('invalid response')) errorType = 'INVALID_RESPONSE';
+    else if (params.error.message.includes('API key')) errorType = 'AUTH_ERROR';
+
+    // Build report
+    const report: LLMErrorReport = {
+      timestamp,
+      model: params.model,
+      errorType,
+      httpStatus: params.httpStatus,
+      errorMessage: params.error.message,
+      request: {
+        messages: params.messages.map(m => ({
+          role: m.role,
+          content: m.content.substring(0, 500) + (m.content.length > 500 ? '...(truncated)' : ''),
+        })),
+        temperature: params.temperature,
+        maxTokens: params.maxTokens,
+        responseFormat: params.responseFormat,
+      },
+      response: params.responseText ? {
+        statusText: params.httpStatus ? `HTTP ${params.httpStatus}` : undefined,
+        body: params.responseText.substring(0, 2000) + (params.responseText.length > 2000 ? '...(truncated)' : ''),
+        headers: params.responseHeaders ? Object.fromEntries(params.responseHeaders.entries()) : undefined,
+      } : undefined,
+      estimatedPromptSize: {
+        characters,
+        estimatedTokens,
+      },
+      fullPrompt,
+      stackTrace: params.error.stack,
+    };
+
+    // Generate report filename
+    const filename = `gemini-error-${formattedTimestamp}-${errorType}.json`;
+    const filepath = path.join(process.cwd(), 'tmp', filename);
+
+    // Write detailed JSON report
+    fs.writeFileSync(filepath, JSON.stringify(report, null, 2), 'utf-8');
+
+    // Also write a human-readable summary
+    const summaryPath = filepath.replace('.json', '.txt');
+    const summary = generateSummaryReport(report);
+    fs.writeFileSync(summaryPath, summary, 'utf-8');
+
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.error('📋 GEMINI ERROR REPORT GENERATED');
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.error(`📁 JSON Report: ${filepath}`);
+    console.error(`📄 Summary Report: ${summaryPath}`);
+    console.error(`⏰ Timestamp: ${timestamp}`);
+    console.error(`🤖 Model: ${params.model}`);
+    console.error(`❌ Error Type: ${errorType}`);
+    console.error(`📊 Prompt Size: ${characters} chars (~${estimatedTokens} tokens)`);
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  } catch (reportError) {
+    console.error('Failed to generate error report:', reportError);
+  }
+}
+
+/**
+ * Generate human-readable summary report
+ */
+function generateSummaryReport(report: LLMErrorReport): string {
+  return `
+================================================================================
+GEMINI LLM ERROR REPORT FOR INSTRUCTOR
+================================================================================
+
+Report Generated: ${report.timestamp}
+Model: ${report.model}
+Error Type: ${report.errorType}
+HTTP Status: ${report.httpStatus || 'N/A'}
+
+--------------------------------------------------------------------------------
+ERROR DETAILS
+--------------------------------------------------------------------------------
+
+Error Message:
+${report.errorMessage}
+
+${report.stackTrace ? `Stack Trace:\n${report.stackTrace}\n` : ''}
+
+--------------------------------------------------------------------------------
+REQUEST PARAMETERS
+--------------------------------------------------------------------------------
+
+Model: ${report.model}
+Temperature: ${report.request.temperature}
+Max Tokens: ${report.request.maxTokens}
+Response Format: ${report.request.responseFormat || 'text'}
+
+Prompt Size:
+- Characters: ${report.estimatedPromptSize.characters}
+- Estimated Tokens: ${report.estimatedPromptSize.estimatedTokens}
+
+--------------------------------------------------------------------------------
+REQUEST MESSAGES (Truncated for readability)
+--------------------------------------------------------------------------------
+
+${report.request.messages.map((m, i) => `
+Message ${i + 1} [${m.role}]:
+${m.content}
+`).join('\n---\n')}
+
+--------------------------------------------------------------------------------
+FULL PROMPT (Complete)
+--------------------------------------------------------------------------------
+
+${report.fullPrompt}
+
+--------------------------------------------------------------------------------
+API RESPONSE
+--------------------------------------------------------------------------------
+
+${report.response ? `
+Status: ${report.response.statusText || 'Unknown'}
+
+Headers:
+${report.response.headers ? JSON.stringify(report.response.headers, null, 2) : 'N/A'}
+
+Body:
+${report.response.body || 'N/A'}
+` : 'No response received'}
+
+--------------------------------------------------------------------------------
+DEBUGGING NOTES
+--------------------------------------------------------------------------------
+
+This error occurred during production use. Please investigate:
+1. Why did the API return this error?
+2. Is this a rate limiting issue?
+3. Is the prompt size causing problems?
+4. Are there any model-specific restrictions being violated?
+
+For questions, please contact: cathyliuwork@gmail.com
+
+================================================================================
+END OF REPORT
+================================================================================
+`;
+}

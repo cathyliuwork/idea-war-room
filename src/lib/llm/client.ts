@@ -4,8 +4,6 @@
  * Wrapper for AI Builders API with retry logic and error handling.
  */
 
-import { reportLLMError } from './error-reporter';
-
 interface LLMMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
@@ -99,24 +97,7 @@ export async function callLLM(request: LLMRequest): Promise<LLMResponse> {
     }
 
     const errorMessage = `LLM API error (${response.status}): ${error.error || response.statusText}`;
-    const errorObj = new Error(errorMessage);
-
-    // Generate error report for Gemini errors (for instructor debugging)
-    if (model.includes('gemini')) {
-      await reportLLMError({
-        model,
-        messages: request.messages,
-        temperature: requestBody.temperature,
-        maxTokens: requestBody.max_tokens || requestBody.max_completion_tokens,
-        responseFormat: request.responseFormat,
-        error: errorObj,
-        httpStatus: response.status,
-        responseText: errorText,
-        responseHeaders: response.headers,
-      });
-    }
-
-    throw errorObj;
+    throw new Error(errorMessage);
   }
 
   const data = await response.json();
@@ -131,24 +112,7 @@ export async function callLLM(request: LLMRequest): Promise<LLMResponse> {
   if (!choice || !choice.message || choice.message.content === undefined) {
     console.error('❌ LLM API returned invalid response structure');
     console.error('Full response:', JSON.stringify(data));
-
-    const errorObj = new Error('LLM API returned invalid response: missing choice or message content');
-
-    // Generate error report for Gemini invalid responses
-    if (model.includes('gemini')) {
-      await reportLLMError({
-        model,
-        messages: request.messages,
-        temperature: requestBody.temperature,
-        maxTokens: requestBody.max_tokens || requestBody.max_completion_tokens,
-        responseFormat: request.responseFormat,
-        error: errorObj,
-        httpStatus: 200, // Response was 200 but structure was invalid
-        responseText: JSON.stringify(data, null, 2),
-      });
-    }
-
-    throw errorObj;
+    throw new Error('LLM API returned invalid response: missing choice or message content');
   }
 
   return {
