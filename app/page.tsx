@@ -1,6 +1,6 @@
 export default function Home() {
   const isMockMode = process.env.AUTH_MODE === 'mock';
-  const parentLoginUrl = process.env.PARENT_LOGIN_URL || '/';
+  const parentLoginUrl = process.env.NEXT_PUBLIC_PARENT_LOGIN_URL || '/';
 
   // Mock mode: show mock login button
   if (isMockMode) {
