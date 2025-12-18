@@ -20,6 +20,9 @@ export interface JWTPayload {
   /** User full name (optional) */
   name?: string;
 
+  /** Member level: 0=Free/Expired, 1=Basic, 2=Pro (optional, defaults to 0) */
+  member?: number;
+
   /** Issued at timestamp (Unix time) */
   iat: number;
 
@@ -48,6 +51,9 @@ export interface User {
 
   /** User full name (nullable) */
   name: string | null;
+
+  /** Member level: 0=Free/Expired, 1=Basic, 2=Pro */
+  member: number;
 
   /** Additional metadata from JWT payload */
   metadata: Record<string, any>;
@@ -82,6 +88,12 @@ export interface AuthContextType {
   /** Loading state while fetching user */
   isLoading: boolean;
 
-  /** Sign out function */
+  /** Whether running in mock/dev mode */
+  isMockMode: boolean;
+
+  /** Sign out function (mock mode only) */
   signOut: () => Promise<void>;
+
+  /** Navigate back to parent website (production mode), clears session first */
+  goToParent: () => Promise<void>;
 }

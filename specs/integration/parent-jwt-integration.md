@@ -99,6 +99,7 @@ User (already logged in) → Click "Idea War Room" menu → Generate JWT → Red
     "sub": "550e8400-e29b-41d4-a716-446655440000",
     "email": "john@example.com",
     "name": "John Doe",
+    "member": 0,
     "iat": 1702345678,
     "exp": 1702349278,
     "metadata": {
@@ -182,6 +183,7 @@ Parent project uses NextAuth with the following session structure:
 | `uuid` | `sub` | ✅ Yes | User's unique identifier |
 | `email` | `email` | ✅ Yes | User's email address |
 | `name` | `name` | ✅ Yes | User's display name |
+| `member` | `member` | ✅ Yes | Member level (0=Free/Expired, 1=Basic, 2=Pro) |
 | `nickname` | `metadata.nickname` | ⬜ No | Alternative display name |
 | `avatar_url` | `metadata.avatar_url` | ⬜ No | User's profile picture URL |
 | `image` | `metadata.image` | ⬜ No | Alternative avatar URL |
@@ -323,6 +325,7 @@ interface ParentUser {
   uuid: string;
   nickname?: string;
   email: string;
+  member: number;
   avatar_url?: string;
   image?: string;
   name: string;
@@ -333,6 +336,7 @@ interface JWTPayload {
   sub: string;
   email: string;
   name: string;
+  member: number;
   iat: number;
   exp: number;
   metadata: {
@@ -365,6 +369,7 @@ export function generateMVPToken(user: ParentUser): string {
     sub: user.uuid,                    // Parent's UUID → JWT sub
     email: user.email,                 // Direct mapping
     name: user.name || user.nickname || user.email, // Use name, fallback to nickname or email
+    member: user.member,               // Member level (0=Free/Expired, 1=Basic, 2=Pro)
     iat: Math.floor(Date.now() / 1000),
     exp: Math.floor(Date.now() / 1000) + JWT_EXPIRATION,
     metadata: {
@@ -409,6 +414,7 @@ const JWT_EXPIRATION = parseInt(process.env.MVP_JWT_EXPIRATION || '3600');
  * @param {string} user.uuid - User UUID
  * @param {string} user.email - User email
  * @param {string} user.name - User name
+ * @param {number} user.member - Member level (0=Free/Expired, 1=Basic, 2=Pro)
  * @returns {string} Signed JWT token
  */
 function generateMVPToken(user) {
@@ -424,6 +430,7 @@ function generateMVPToken(user) {
     sub: user.uuid,
     email: user.email,
     name: user.name || user.nickname || user.email,
+    member: user.member,
     iat: Math.floor(Date.now() / 1000),
     exp: Math.floor(Date.now() / 1000) + JWT_EXPIRATION,
     metadata: {
@@ -569,6 +576,7 @@ declare module 'next-auth' {
       uuid: string;
       nickname?: string;
       email: string;
+      member: number;
       avatar_url?: string;
       image?: string;
       name: string;
@@ -580,6 +588,7 @@ declare module 'next-auth' {
     uuid: string;
     nickname?: string;
     email: string;
+    member: number;
     avatar_url?: string;
     image?: string;
     name: string;

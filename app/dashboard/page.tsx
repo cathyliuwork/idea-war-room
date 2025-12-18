@@ -13,14 +13,18 @@ import EmptyState from './components/EmptyState';
  * Redirects to login if not authenticated.
  */
 export default function Dashboard() {
-  const { user, isLoading, signOut } = useAuth();
+  const { user, isLoading, isMockMode, signOut, goToParent } = useAuth();
   const router = useRouter();
   const [sessions, setSessions] = useState<any[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(true);
 
   useEffect(() => {
     if (!isLoading && !user) {
-      router.push('/api/auth/mock/login');
+      const loginUrl =
+        process.env.NEXT_PUBLIC_AUTH_MODE === 'mock'
+          ? '/api/auth/mock/login'
+          : process.env.NEXT_PUBLIC_PARENT_LOGIN_URL || '/';
+      router.push(loginUrl);
     }
   }, [user, isLoading, router]);
 
@@ -64,7 +68,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-bg-secondary">
       {/* Dev Mode Warning Banner */}
-      {process.env.NEXT_PUBLIC_APP_URL?.includes('localhost') && (
+      {process.env.NEXT_PUBLIC_AUTH_MODE === 'mock' && (
         <div className="bg-severity-3-bg border-b-2 border-severity-3-significant px-4 py-2 text-center text-sm">
           <span className="font-semibold">⚠️ Dev Mode Active</span>
           <span className="text-text-secondary ml-2">
@@ -93,12 +97,21 @@ export default function Dashboard() {
                 </div>
                 <div className="text-xs text-text-secondary">{user.email}</div>
               </div>
-              <button
-                onClick={signOut}
-                className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-text-primary border border-border-medium rounded-lg hover:border-border-dark transition-colors"
-              >
-                Logout
-              </button>
+              {isMockMode ? (
+                <button
+                  onClick={signOut}
+                  className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-text-primary border border-border-medium rounded-lg hover:border-border-dark transition-colors"
+                >
+                  Logout
+                </button>
+              ) : (
+                <button
+                  onClick={goToParent}
+                  className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-text-primary border border-border-medium rounded-lg hover:border-border-dark transition-colors"
+                >
+                  Back to Home
+                </button>
+              )}
             </div>
           </div>
         </div>

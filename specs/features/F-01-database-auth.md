@@ -98,6 +98,7 @@ User → Parent Auth → JWT generated → MVP validates → Session created →
     "sub": "parent-user-123",
     "email": "founder@startup.com",
     "name": "Jane Founder",
+    "member": 0,
     "iat": 1702345678,
     "exp": 1702349278,
     "metadata": {"company": "Acme Inc"}
@@ -182,9 +183,16 @@ User → Parent Auth → JWT generated → MVP validates → Session created →
 
 **MVP Only Displays**:
 - User email/name in navigation (from session)
-- "Logout" button (clears session, redirects to parent)
+- Navigation button (mode-dependent, see below)
 - Loading spinner during JWT validation
 - Error messages for invalid tokens
+
+**Navigation Button Behavior**:
+
+| Mode | Button | Action |
+|------|--------|--------|
+| Mock (dev) | "Logout" | Clear session cookie → Redirect to mock login |
+| Production (jwt) | "Back to Home" | Clear session cookie → Redirect to `NEXT_PUBLIC_PARENT_HOME_URL` |
 
 **Navigation Bar**:
 ```
@@ -192,8 +200,8 @@ User → Parent Auth → JWT generated → MVP validates → Session created →
 │ Logo    Dashboard  History    jane@... ▼│
 └─────────────────────────────────────────┘
                                      ↓
-                                 [Dropdown]
-                                 Logout
+                                 [Button]
+                        Mock: "Logout" / Production: "Back to Home"
 ```
 
 ---
@@ -429,6 +437,7 @@ export interface JWTPayload {
   sub: string;           // External user ID (required)
   email: string;         // User email (required)
   name?: string;         // Display name (optional)
+  member?: number;       // Member level: 0=Free/Expired, 1=Basic, 2=Pro (optional)
   iat: number;           // Issued at timestamp
   exp: number;           // Expiration timestamp
   metadata?: Record<string, any>; // Additional data
@@ -860,6 +869,7 @@ JWT_ALGORITHM=HS256
 # Parent Project URLs (NEW)
 PARENT_LOGIN_URL=https://parent.example.com/login
 NEXT_PUBLIC_PARENT_LOGIN_URL=https://parent.example.com/login
+NEXT_PUBLIC_PARENT_HOME_URL=https://parent.example.com
 
 # AI Builders API (existing)
 AI_BUILDERS_API_KEY=xxx
@@ -1454,6 +1464,7 @@ function parseExpiry(expiry: string): number {
   "sub": "parent-user-id",
   "email": "user@example.com",
   "name": "User Name",
+  "member": 0,
   "iat": 1702345678,
   "exp": 1702349278,
   "metadata": {

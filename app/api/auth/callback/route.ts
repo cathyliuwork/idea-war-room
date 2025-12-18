@@ -3,6 +3,26 @@ import { verifyJWT } from '@/lib/auth/jwt';
 import { upsertUserProfile } from '@/lib/auth/user';
 import { setSessionCookie } from '@/lib/auth/session';
 
+// CORS configuration - allow all origins for auth callback
+// This is safe because the callback only processes valid JWT tokens
+/**
+ * Add CORS headers to response
+ */
+function addCorsHeaders(response: NextResponse): NextResponse {
+  response.headers.set('Access-Control-Allow-Origin', '*');
+  response.headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  response.headers.set('Access-Control-Allow-Headers', '*');
+  return response;
+}
+
+/**
+ * Handle CORS preflight requests
+ */
+export async function OPTIONS() {
+  const response = new NextResponse(null, { status: 204 });
+  return addCorsHeaders(response);
+}
+
 /**
  * Authentication Callback Endpoint
  *
@@ -17,10 +37,11 @@ export async function GET(request: NextRequest) {
     const token = url.searchParams.get('token');
 
     if (!token) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: 'Missing token parameter' },
         { status: 400 }
       );
+      return addCorsHeaders(response);
     }
 
     // Verify JWT signature and expiration
@@ -35,16 +56,17 @@ export async function GET(request: NextRequest) {
     const response = NextResponse.redirect(new URL('/dashboard', baseUrl));
     setSessionCookie(response, token);
 
-    return response;
+    return addCorsHeaders(response);
   } catch (error) {
     console.error('Auth callback failed:', error);
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         error: 'Authentication failed',
         details: (error as Error).message,
       },
       { status: 401 }
     );
+    return addCorsHeaders(response);
   }
 }

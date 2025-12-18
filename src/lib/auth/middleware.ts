@@ -34,6 +34,7 @@ export async function getCurrentUser(): Promise<User> {
     externalUserId: userProfile.external_user_id,
     email: userProfile.email,
     name: userProfile.full_name,
+    member: payload.member ?? 0, // Read from JWT, default to 0 (free user)
     metadata: userProfile.metadata,
   };
 }

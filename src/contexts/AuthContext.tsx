@@ -21,6 +21,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Check if running in mock mode
+  const isMockMode = process.env.NEXT_PUBLIC_AUTH_MODE === 'mock';
+
   useEffect(() => {
     fetchUser();
   }, []);
@@ -39,6 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Sign out (mock mode only) - clears session and redirects to mock login
   const signOut = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
@@ -49,8 +53,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Navigate back to parent website (production mode)
+  // Clears session cookie before redirecting
+  const goToParent = async () => {
+    try {
+      // Clear session cookie first
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (error) {
+      console.error('Failed to clear session:', error);
+    }
+    // Redirect to parent site regardless of logout success
+    const parentHomeUrl = process.env.NEXT_PUBLIC_PARENT_HOME_URL || '/';
+    window.location.href = parentHomeUrl;
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, signOut }}>
+    <AuthContext.Provider value={{ user, isLoading, isMockMode, signOut, goToParent }}>
       {children}
     </AuthContext.Provider>
   );

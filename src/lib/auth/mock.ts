@@ -50,6 +50,7 @@ export function generateMockJWT(user: MockUser): string {
       sub: user.id,
       email: user.email,
       name: user.name,
+      member: 0, // Default to free user in mock mode
       iat: Math.floor(Date.now() / 1000),
       exp: Math.floor(Date.now() / 1000) + 86400, // 24 hours
       metadata: { mode: 'development' },
