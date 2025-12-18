@@ -105,6 +105,21 @@ User → Parent Auth → JWT generated → MVP validates → Session created →
   }
   ```
 
+**Member Field Usage**:
+
+The `member` field in JWT payload controls session quota limits:
+
+| Member Value | Tier | Session Limit |
+|--------------|------|---------------|
+| 0 | Free | 2 sessions (lifetime) |
+| 1 | Basic | 5 sessions (lifetime) |
+| 2+ | Pro | Unlimited |
+
+- Quota is checked when creating new sessions (`POST /api/sessions/create`)
+- If limit exceeded, API returns 403 with `QUOTA_EXCEEDED` code
+- Dashboard displays quota usage and upgrade prompts when limit reached
+- See [F-09: Session History](./F-09-session-history.md#session-quota-system) for full quota system details
+
 **Step 2**: Parent redirects to MVP with JWT
 - Parent: Redirects to `https://mvp.com/auth/callback?token=eyJxxx...`
 - MVP: Receives request with JWT token in query parameter

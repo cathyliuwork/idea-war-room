@@ -332,6 +332,28 @@ CREATE INDEX idx_sessions_completion ON sessions(research_completed, analysis_co
 
 -- RLS Policies
 ALTER TABLE sessions ENABLE ROW LEVEL SECURITY;
+```
+
+**Session Business Rules**:
+
+**Draft Sessions**:
+- A session without an associated `ideas` record is considered a "draft"
+- Draft sessions represent started but incomplete analysis flows
+- Users can resume draft sessions by continuing to the intake form
+- Draft sessions are displayed with "Draft" badge in session history
+
+**Session Quota**:
+- Session creation is limited based on user's `member` level (from JWT):
+  - `member=0` (Free): 2 sessions lifetime
+  - `member=1` (Basic): 5 sessions lifetime
+  - `member>=2` (Pro): Unlimited
+- **All sessions count toward quota**, including drafts
+- Quota check occurs in `POST /api/sessions/create` before insert
+- When quota exceeded, API returns 403 with `QUOTA_EXCEEDED` code
+
+**Note**: Quota limits are enforced at application level, not database level. The `member` field is not stored in the database; it comes from JWT payload on each request.
+
+```sql
 
 CREATE POLICY "Users can view own sessions"
   ON sessions FOR SELECT

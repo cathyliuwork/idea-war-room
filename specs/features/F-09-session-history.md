@@ -153,6 +153,66 @@ The session history shows completion of both phases independently via completion
 
 ---
 
+## Session Quota System
+
+### Overview
+
+Session creation is limited based on membership tier to manage resource usage during beta. Users can see their quota usage on the dashboard and receive prompts to upgrade when limits are reached.
+
+### Quota Rules by Membership Tier
+
+| Member Level | Limit | Description |
+|--------------|-------|-------------|
+| 0 (Free) | 2 sessions | Lifetime limit |
+| 1 (Basic) | 5 sessions | Lifetime limit |
+| 2+ (Pro) | Unlimited | No restrictions |
+
+**Note**: `member` level comes from JWT payload during authentication.
+
+### Draft Sessions
+
+Sessions without a completed idea (intake form not submitted) are considered "drafts":
+
+- **Definition**: Session record exists but no associated idea record
+- **Counts toward quota**: ✓ Yes
+- **Displayed in list**: ✓ Yes, with "Draft" badge
+- **Action button**: "Continue" → navigates to `/analyze/[session_id]/intake`
+- **Title display**: "Untitled Draft" (italic, muted color)
+
+### Quota Display Components
+
+**1. QuotaDisplay**
+- Location: Recent Sessions section header
+- Shows progress bar and "SESSION USAGE: X of Y"
+- Color changes based on usage:
+  - Normal: Blue
+  - Near limit (1 remaining): Amber
+  - Limit reached: Red
+
+**2. UpgradePrompt**
+- Location: Above welcome card (auto-shown when limit reached)
+- Amber background with upgrade messaging
+- "Upgrade Now" button links to parent site
+
+**3. Remaining Sessions Hint**
+- Location: Below "Start New Analysis" button
+- Shows "ⓘ X free sessions remaining"
+- Hidden when limit reached
+
+### Quota Enforcement
+
+**On Dashboard Load**:
+- API returns quota info with session list
+- UI displays quota status
+- If limit reached: upgrade prompt shown, create button disabled
+
+**On Session Create (POST /api/sessions/create)**:
+- Check quota before insert
+- If limit exceeded: return 403 with `QUOTA_EXCEEDED` code
+- Response includes current quota for UI update
+
+---
+
 ### Acceptance Criteria
 
 - [ ] Dashboard displays list of user's past sessions
@@ -192,8 +252,16 @@ interface SessionListResponse {
     analysis_completed: boolean;
     created_at: string;
     high_concept: string;
+    is_draft: boolean;  // true if no idea submitted yet
   }>;
   total_count: number;
+  quota: {
+    used: number;
+    limit: number | null;  // null = unlimited
+    remaining: number | null;
+    isLimitReached: boolean;
+    memberLevel: number;
+  };
 }
 ```
 
