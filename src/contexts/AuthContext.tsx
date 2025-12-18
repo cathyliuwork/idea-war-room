@@ -58,7 +58,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const goToParent = async () => {
     try {
       // Clear session cookie first
-      await fetch('/api/auth/logout', { method: 'POST' });
+      // Use redirect: 'manual' to prevent fetch from following the redirect (which causes CORS error)
+      await fetch('/api/auth/logout', { method: 'POST', redirect: 'manual' });
     } catch (error) {
       console.error('Failed to clear session:', error);
     }
