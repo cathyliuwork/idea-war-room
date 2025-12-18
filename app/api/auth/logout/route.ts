@@ -2,22 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { clearSessionCookie } from '@/lib/auth/session';
 
 /**
- * Logout Endpoint
+ * Logout Endpoint (Mock Mode)
  *
- * Clears session cookie and redirects to login page.
+ * Clears session cookie and redirects to mock login page.
+ * For JWT mode, use /api/auth/clear-session instead.
  *
  * POST /api/auth/logout
  */
 export async function POST(request: NextRequest) {
-  const loginUrl =
-    process.env.AUTH_MODE === 'mock'
-      ? '/api/auth/mock/login'
-      : process.env.NEXT_PUBLIC_PARENT_LOGIN_URL || '/';
-
-  // Use NEXT_PUBLIC_APP_URL for redirect to ensure correct domain in Docker/production
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.url;
-  const response = NextResponse.redirect(new URL(loginUrl, baseUrl));
+  const response = NextResponse.redirect(new URL('/api/auth/mock/login', request.url));
   clearSessionCookie(response);
-
   return response;
 }
