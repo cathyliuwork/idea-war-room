@@ -87,7 +87,7 @@ export default function Dashboard() {
     router.push(`/analyze/${data.session_id}/intake`);
   };
 
-  const isCreateDisabled = quota?.isLimitReached || false;
+  const isCreateDisabled = sessionsLoading || quota?.isLimitReached || false;
 
   return (
     <div className="min-h-screen bg-bg-secondary">
