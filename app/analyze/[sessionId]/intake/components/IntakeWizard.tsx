@@ -19,6 +19,7 @@ export default function IntakeWizard({ sessionId }: IntakeWizardProps) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isMockMode = process.env.NEXT_PUBLIC_AUTH_MODE === 'mock';
 
   const form = useForm<StructuredIdea>({
     resolver: zodResolver(StructuredIdeaSchema),
@@ -268,7 +269,34 @@ export default function IntakeWizard({ sessionId }: IntakeWizardProps) {
   };
 
   const handleBack = () => {
-    setCurrentStep((prev) => Math.max(1, prev - 1) as 1 | 2 | 3);
+    if (currentStep === 1) {
+      router.push('/dashboard');
+    } else {
+      setCurrentStep((prev) => (prev - 1) as 1 | 2 | 3);
+    }
+  };
+
+  const handleReset = () => {
+    form.reset({
+      high_concept: '',
+      value_proposition: '',
+      success_metric_18m: '',
+      assumptions: {
+        market: [],
+        technical: [],
+        business_model: [],
+      },
+      assets: {
+        key_assets: [],
+        brand_narrative: [],
+      },
+      environment: {
+        user_persona: '',
+        competitive_landscape: '',
+        regulatory_context: '',
+      },
+    });
+    setCurrentStep(1);
   };
 
   const handleSubmit = async () => {
@@ -342,37 +370,50 @@ export default function IntakeWizard({ sessionId }: IntakeWizardProps) {
       <ProgressIndicator currentStep={currentStep} />
 
       {/* Example buttons - compact row */}
-      <div className="flex items-center gap-2 mb-4 text-sm">
-        <span className="text-text-tertiary">Quick examples:</span>
-        <button
-          type="button"
-          onClick={loadExample1}
-          className="px-3 py-1 border border-border-medium text-text-secondary rounded hover:bg-bg-secondary hover:border-brand-primary transition-colors"
-        >
-          Idea Validator
-        </button>
-        <button
-          type="button"
-          onClick={loadExample2}
-          className="px-3 py-1 border border-border-medium text-text-secondary rounded hover:bg-bg-secondary hover:border-brand-primary transition-colors"
-        >
-          Sales Analyzer
-        </button>
-        <button
-          type="button"
-          onClick={loadExample3}
-          className="px-3 py-1 border border-border-medium text-text-secondary rounded hover:bg-bg-secondary hover:border-brand-primary transition-colors"
-        >
-          代码审查AI
-        </button>
-        <button
-          type="button"
-          onClick={loadExample4}
-          className="px-3 py-1 border border-border-medium text-text-secondary rounded hover:bg-bg-secondary hover:border-brand-primary transition-colors"
-        >
-          医疗影像AI
-        </button>
-      </div>
+      {isMockMode ? (
+        <div className="flex items-center gap-2 mb-4 text-sm">
+          <span className="text-text-tertiary">Quick examples:</span>
+          <button
+            type="button"
+            onClick={loadExample1}
+            className="px-3 py-1 border border-border-medium text-text-secondary rounded hover:bg-bg-secondary hover:border-brand-primary transition-colors"
+          >
+            Idea Validator
+          </button>
+          <button
+            type="button"
+            onClick={loadExample2}
+            className="px-3 py-1 border border-border-medium text-text-secondary rounded hover:bg-bg-secondary hover:border-brand-primary transition-colors"
+          >
+            Sales Analyzer
+          </button>
+          <button
+            type="button"
+            onClick={loadExample3}
+            className="px-3 py-1 border border-border-medium text-text-secondary rounded hover:bg-bg-secondary hover:border-brand-primary transition-colors"
+          >
+            代码审查AI
+          </button>
+          <button
+            type="button"
+            onClick={loadExample4}
+            className="px-3 py-1 border border-border-medium text-text-secondary rounded hover:bg-bg-secondary hover:border-brand-primary transition-colors"
+          >
+            医疗影像AI
+          </button>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 mb-4 text-sm">
+          <span className="text-brand-primary">No idea yet? Explore with a sample idea:</span>
+          <button
+            type="button"
+            onClick={loadExample2}
+            className="px-3 py-1.5 bg-border-light text-brand-primary rounded hover:bg-brand-light transition-colors"
+          >
+            AI Sales Analyzer
+          </button>
+        </div>
+      )}
 
       <div className="bg-bg-primary rounded-lg shadow-card p-8">
         {currentStep === 1 && <Step1CoreConcept form={form} />}
@@ -384,6 +425,7 @@ export default function IntakeWizard({ sessionId }: IntakeWizardProps) {
           onBack={handleBack}
           onNext={handleNext}
           onSubmit={handleSubmit}
+          onReset={handleReset}
           isSubmitting={isSubmitting}
           canProceed={canProceed()}
         />

@@ -7,8 +7,8 @@ interface ProgressIndicatorProps {
 export default function ProgressIndicator({ currentStep }: ProgressIndicatorProps) {
   const steps = [
     { number: 1, label: 'Core Concept' },
-    { number: 2, label: 'Environment' },
-    { number: 3, label: 'Assumptions & Assets' },
+    { number: 2, label: 'Business Context' },
+    { number: 3, label: 'Strategic Inputs' },
   ];
 
   const progress = (currentStep / 3) * 100;
@@ -48,7 +48,7 @@ export default function ProgressIndicator({ currentStep }: ProgressIndicatorProp
                 {step.number < currentStep ? '✓' : step.number}
               </div>
               <span
-                className={`mt-2 text-xs text-center max-w-[100px] ${
+                className={`mt-2 text-xs text-center max-w-[120px] ${
                   step.number === currentStep
                     ? 'text-text-primary font-medium'
                     : 'text-text-tertiary'

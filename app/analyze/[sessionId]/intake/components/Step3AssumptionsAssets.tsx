@@ -25,10 +25,10 @@ export default function Step3AssumptionsAssets({ form }: Step3AssumptionsAssetsP
     <div className="space-y-8">
       <div>
         <h2 className="text-2xl font-bold text-text-primary mb-2">
-          Assumptions & Assets
+          Strategic Inputs
         </h2>
         <p className="text-text-secondary">
-          These fields are optional but help us provide a more comprehensive analysis. Skip any that don&apos;t apply.
+          Key assumptions and strengths that shape your strategy. Skip any that don&apos;t apply.
         </p>
       </div>
 

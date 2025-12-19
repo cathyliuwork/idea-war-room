@@ -54,7 +54,7 @@ export default function IdeaSummary({
           {/* Step 2: Environment */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-text-primary">
-              Environment & Context
+              Business Context
             </h3>
 
             <div>
@@ -167,7 +167,7 @@ export default function IdeaSummary({
               {idea.assets.brand_narrative.length > 0 && (
                 <div>
                   <label className="block text-sm font-semibold text-text-secondary mb-1">
-                    Brand Narrative
+                    Brand Narrative Strengths
                   </label>
                   <ul className="list-disc list-inside space-y-1">
                     {idea.assets.brand_narrative.map((item, idx) => (

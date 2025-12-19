@@ -7,6 +7,7 @@ interface FormNavigationProps {
   onBack: () => void;
   onNext: () => void;
   onSubmit: () => void;
+  onReset: () => void;
   isSubmitting: boolean;
   canProceed: boolean;
 }
@@ -16,6 +17,7 @@ export default function FormNavigation({
   onBack,
   onNext,
   onSubmit,
+  onReset,
   isSubmitting,
   canProceed,
 }: FormNavigationProps) {
@@ -28,11 +30,21 @@ export default function FormNavigation({
       <button
         type="button"
         onClick={onBack}
-        disabled={isFirstStep || isSubmitting}
+        disabled={isSubmitting}
         className="flex items-center gap-2 px-6 py-3 border border-border-medium text-text-secondary rounded-lg hover:border-border-dark hover:text-text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <ArrowLeft className="w-4 h-4" />
         <span>Back</span>
+      </button>
+
+      {/* Reset Button */}
+      <button
+        type="button"
+        onClick={onReset}
+        disabled={isSubmitting}
+        className="px-4 py-2 border border-border-medium text-text-secondary rounded-lg hover:border-border-dark hover:text-text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        Reset Form
       </button>
 
       {/* Next / Submit Button */}

@@ -29,7 +29,7 @@ export default function Step2Environment({ form }: Step2EnvironmentProps) {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-text-primary mb-2">
-          Environment & Context
+          Business Context
         </h2>
         <p className="text-text-secondary">
           Help us understand your target market and competitive landscape.

@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Idea War Room - MVTA Analysis',
+  title: 'Idea War Room',
   description: 'AI-powered Multi-Vector Threat Analysis for startup ideas',
 };
 

@@ -110,7 +110,7 @@ export default function Dashboard() {
                 Idea War Room
               </h1>
               <p className="text-sm text-text-secondary mt-1">
-                Multi-Vector Threat Analysis Platform
+                AI-powered Idea Analysis and Validation
               </p>
             </div>
 
@@ -157,7 +157,7 @@ export default function Dashboard() {
 
           <p className="text-text-secondary mb-6">
             Ready to stress-test your startup idea? Start a new analysis session
-            to get evidence-backed adversarial insights in 30-45 minutes.
+            to get evidence-backed adversarial insights in 10-15 minutes.
           </p>
 
           {createError && (
