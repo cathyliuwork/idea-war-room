@@ -166,7 +166,7 @@ export default function ResearchChoicePage() {
           </h3>
           <ul className="space-y-2 text-sm text-text-secondary">
             <li>• Click on a research type to start gathering intelligence</li>
-            <li>• Each research type runs independently (1-3 minutes each)</li>
+            <li>• Each research type runs independently (2-5 minutes each)</li>
             <li>
               • You can run one, two, or all three types for your idea
             </li>

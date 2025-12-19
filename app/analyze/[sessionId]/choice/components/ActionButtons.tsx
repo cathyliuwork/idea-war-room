@@ -32,7 +32,7 @@ export default function ActionButtons({
   // Research button: always "Online Research", always enabled
   // Badge shows completion status (multi-type support)
   const researchConfig = {
-    label: 'Online Research',
+    label: 'Start Research',
     variant: 'secondary' as const,
     badge: session.research_completed ? 'Completed' : 'Not Started',
     badgeColor: session.research_completed
@@ -65,7 +65,7 @@ export default function ActionButtons({
     <div className="grid md:grid-cols-2 gap-6 mt-8">
       {/* MVTA Analysis Card */}
       <div
-        className={`bg-white rounded-lg shadow-md border-2 p-6 transition-all ${
+        className={`bg-white rounded-lg shadow-md border-2 p-6 transition-all flex flex-col ${
           highlightAnalysis
             ? 'border-brand-primary ring-2 ring-brand-primary ring-opacity-50'
             : 'border-gray-200 hover:border-brand-primary'
@@ -91,7 +91,7 @@ export default function ActionButtons({
           </div>
           <div className="flex-1">
             <h3 className="text-xl font-bold text-text-primary mb-2">
-              MVTA Analysis
+              Red Team Analysis
             </h3>
             <span
               className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${analysisBadgeColor}`}
@@ -102,27 +102,30 @@ export default function ActionButtons({
         </div>
 
         <p className="text-text-secondary mb-6">
-          Simulate adversarial attacks on your idea across 5 threat vectors. Get
-          15-25 vulnerabilities with severity scores and actionable recommendations.
+          Using the MVTA method, simulate adversarial attacks on your idea across 5
+          threat vectors. Get 15-25 vulnerabilities with severity scores and
+          actionable recommendations.
         </p>
 
         {/* Main Action Button */}
+        <div className="mt-auto">
         <button
           onClick={handleAnalysisClick}
-          className="w-full px-6 py-3 rounded-lg font-semibold transition-colors bg-brand-primary text-white hover:bg-brand-hover"
+          className="w-full px-6 py-3 rounded-lg font-semibold transition-colors bg-brand-primary text-white hover:bg-brand-hover border-2 border-transparent"
         >
           {analysisButtonLabel}
         </button>
 
-        {highlightAnalysis && (
-          <p className="mt-3 text-sm text-brand-primary font-medium">
-            ✨ Recommended: Run analysis with your research insights
-          </p>
-        )}
+        <p className="mt-3 text-sm text-text-secondary">
+          {highlightAnalysis
+            ? '✨ Recommended: Run analysis with your research insights'
+            : 'Core feature: Identify vulnerabilities before building'}
+        </p>
+        </div>
       </div>
 
       {/* Online Research Card */}
-      <div className="bg-white rounded-lg shadow-md border-2 border-gray-200 hover:border-brand-primary p-6 transition-all">
+      <div className="bg-white rounded-lg shadow-md border-2 border-gray-200 hover:border-brand-primary p-6 transition-all flex flex-col">
         <div className="flex items-start mb-4">
           <div className="flex-shrink-0 mr-4">
             <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
@@ -158,6 +161,7 @@ export default function ActionButtons({
           compliance. Run one or all three types independently.
         </p>
 
+        <div className="mt-auto">
         <button
           onClick={onStartResearch}
           className="w-full px-6 py-3 rounded-lg font-semibold transition-colors bg-white text-brand-primary border-2 border-brand-primary hover:bg-brand-light"
@@ -170,6 +174,7 @@ export default function ActionButtons({
             ? 'View or run additional research types'
             : 'Optional: Research can be done before or after MVTA'}
         </p>
+        </div>
       </div>
     </div>
   );

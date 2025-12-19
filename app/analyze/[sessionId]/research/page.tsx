@@ -89,8 +89,8 @@ export default function ResearchPage() {
       const data = await res.json();
       setResults(data);
 
-      // Navigate directly to results page (no alert)
-      router.push(`/analyze/${sessionId}/research/${type}`);
+      // Navigate directly to results page
+      router.push(`/analyze/${sessionId}/research-results?type=${type}`);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -150,7 +150,7 @@ export default function ResearchPage() {
             {typeConfig?.icon} {typeConfig?.label}
           </h1>
           <p className="text-text-secondary mb-6">
-            {typeConfig?.description} This takes 1-3 minutes.
+            {typeConfig?.description}
           </p>
 
           {error && (
@@ -178,7 +178,7 @@ export default function ResearchPage() {
                     <br />
                     2. {type === 'competitor' && 'Searching for competitors and alternatives...'}
                     {type === 'community' && 'Analyzing community discussions and reviews...'}
-                    {type === 'regulatory' && 'Checking regulatory requirements...'}
+                    {type === 'regulatory' && 'Checking regulatory and legal requirements...'}
                     <br />
                     3. Synthesizing findings with AI...
                   </p>
@@ -199,10 +199,10 @@ export default function ResearchPage() {
               </div>
 
               <button
-                onClick={() => router.push(`/analyze/${sessionId}/analysis`)}
+                onClick={() => router.push(`/analyze/${sessionId}/research-results?type=${type}`)}
                 className="px-6 py-3 bg-brand-primary text-white font-semibold rounded-lg hover:bg-brand-hover transition-colors shadow-sm"
               >
-                Start MVTA Red Team Analysis
+                View Results
               </button>
             </div>
           )}

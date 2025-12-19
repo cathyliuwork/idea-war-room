@@ -112,7 +112,7 @@ export default function ReportPage() {
         <div className="bg-bg-primary rounded-lg shadow-card p-8 mb-8">
           <div className="flex items-start justify-between mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-text-primary mb-2">MVTA Damage Report</h1>
+              <h1 className="text-3xl font-bold text-text-primary mb-2">MVTA Report</h1>
               <p className="text-text-secondary">
                 Red Team Analysis Complete • {new Date(report.created_at).toLocaleDateString()}
               </p>

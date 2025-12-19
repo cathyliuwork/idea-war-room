@@ -72,7 +72,7 @@ export default function AnalysisPage() {
       <div className="max-w-reading mx-auto px-6">
         <div className="bg-bg-primary rounded-lg shadow-card p-8">
           <h1 className="text-2xl font-bold text-text-primary mb-2">
-            MVTA Red Team Analysis
+            Red Team - Multi-Vector Threat Analysis (MVTA)
           </h1>
           <p className="text-text-secondary mb-6">
             Our AI red team will now attack your idea from 5 adversarial perspectives across
@@ -92,13 +92,13 @@ export default function AnalysisPage() {
                 className="px-6 py-3 bg-brand-primary text-white font-semibold rounded-lg hover:bg-brand-hover transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isAnalyzing}
               >
-                {isAnalyzing ? 'Red Team is attacking... (2-3 min)' : 'Start MVTA Analysis'}
+                {isAnalyzing ? 'Red Team is attacking... (2-3 min)' : 'Start Analysis'}
               </button>
 
               {isAnalyzing && (
                 <div className="p-4 bg-brand-light border border-brand-primary rounded-lg">
                   <p className="text-sm text-text-secondary">
-                    <strong className="text-text-primary">🎯 Red Team in progress:</strong>
+                    <strong className="text-text-primary">🎯 MVTA Analysis in progress:</strong>
                     <br />
                     1. Technical Penetration Tester - attacking product integrity...
                     <br />

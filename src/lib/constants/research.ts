@@ -54,7 +54,7 @@ export const RESEARCH_TYPE_CONFIGS: readonly ResearchTypeConfig[] = [
     label: 'Competitor Research',
     icon: '🏢',
     description:
-      'Analyze existing solutions, pricing strategies, and competitive landscape',
+      'Discover competitor products, pricing strategies, and market positioning.',
     shortDesc: 'Analyze existing solutions and alternatives',
   },
   {
@@ -62,14 +62,14 @@ export const RESEARCH_TYPE_CONFIGS: readonly ResearchTypeConfig[] = [
     label: 'Community Voice',
     icon: '👥',
     description:
-      'Listen to user discussions on Reddit, forums, and social media',
+      'Uncover user pain points, feedback, and discussions from online communities.',
     shortDesc: 'Listen to user discussions and feedback',
   },
   {
     id: 'regulatory',
     label: 'Regulatory Research',
     icon: '📋',
-    description: 'Identify compliance requirements and legal considerations',
+    description: 'Identify compliance requirements and legal considerations.',
     shortDesc: 'Identify compliance and legal requirements',
   },
 ] as const;
