@@ -15,6 +15,8 @@ interface ActionButtonsProps {
   onStartResearch: () => void;
   onStartAnalysis: () => void;
   onViewReport: () => void;
+  researchCompletedCount: number;
+  researchTotalCount: number;
 }
 
 /**
@@ -28,20 +30,36 @@ export default function ActionButtons({
   onStartResearch,
   onStartAnalysis,
   onViewReport,
+  researchCompletedCount,
+  researchTotalCount,
 }: ActionButtonsProps) {
   const { t } = useTranslation();
 
-  // Research button: always "Online Research", always enabled
-  // Badge shows completion status (multi-type support)
-  const researchConfig = {
-    label: t('choice.startResearch'),
-    variant: 'secondary' as const,
-    badge: session.research_completed ? t('choice.completed') : t('choice.notStarted'),
-    badgeColor: session.research_completed
-      ? 'bg-green-100 text-green-800'
-      : 'bg-gray-100 text-gray-800',
-    disabled: false, // Always enabled
-  };
+  // Research button: label changes based on completion state
+  // 0/3: "开始调研", 1-2/3: "继续调研", 3/3: "查看结果"
+  const allResearchCompleted = researchCompletedCount === researchTotalCount;
+  const someResearchCompleted = researchCompletedCount > 0 && researchCompletedCount < researchTotalCount;
+  const noResearchCompleted = researchCompletedCount === 0;
+
+  let researchButtonLabel: string;
+  if (allResearchCompleted) {
+    researchButtonLabel = t('research.viewResults');
+  } else if (someResearchCompleted) {
+    researchButtonLabel = t('choice.continueResearch');
+  } else {
+    researchButtonLabel = t('choice.startResearch');
+  }
+
+  const researchBadge = allResearchCompleted
+    ? t('choice.completed')
+    : someResearchCompleted
+      ? `${researchCompletedCount}/${researchTotalCount}`
+      : t('choice.notStarted');
+  const researchBadgeColor = allResearchCompleted
+    ? 'bg-green-100 text-green-800'
+    : someResearchCompleted
+      ? 'bg-yellow-100 text-yellow-800'
+      : 'bg-gray-100 text-gray-800';
 
   // Analysis button label changes based on completion state
   const analysisCompleted = session.analysis_completed;
@@ -149,9 +167,9 @@ export default function ActionButtons({
               {t('choice.researchTitle')}
             </h3>
             <span
-              className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${researchConfig.badgeColor}`}
+              className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${researchBadgeColor}`}
             >
-              {researchConfig.badge}
+              {researchBadge}
             </span>
           </div>
         </div>
@@ -165,13 +183,15 @@ export default function ActionButtons({
           onClick={onStartResearch}
           className="w-full px-6 py-3 rounded-lg font-semibold transition-colors bg-white text-brand-primary border-2 border-brand-primary hover:bg-brand-light"
         >
-          {researchConfig.label}
+          {researchButtonLabel}
         </button>
 
         <p className="mt-3 text-sm text-text-secondary">
-          {session.research_completed
+          {allResearchCompleted
             ? t('choice.viewMoreResearch')
-            : t('choice.optionalResearchHint')}
+            : someResearchCompleted
+              ? t('choice.continueResearchHint')
+              : t('choice.optionalResearchHint')}
         </p>
         </div>
       </div>

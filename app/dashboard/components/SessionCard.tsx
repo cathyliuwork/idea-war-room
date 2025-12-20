@@ -8,6 +8,8 @@ interface SessionCardProps {
     id: string;
     status: 'intake' | 'choice' | 'completed' | 'failed';
     research_completed: boolean;
+    research_completed_count?: number;
+    research_total_count?: number;
     analysis_completed: boolean;
     created_at: string;
     high_concept: string;
@@ -62,10 +64,10 @@ export default function SessionCard({ session }: SessionCardProps) {
     if (session.status === 'completed') {
       return (
         <button
-          onClick={() => router.push(`/analyze/${session.id}/report`)}
+          onClick={() => router.push(`/analyze/${session.id}/choice`)}
           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
         >
-          {t('dashboard.viewReport')}
+          {t('dashboard.viewDetails')}
         </button>
       );
     }
@@ -124,11 +126,17 @@ export default function SessionCard({ session }: SessionCardProps) {
           <div className="flex items-center gap-3 text-sm text-gray-600">
             <span>{formatDate(session.created_at)}</span>
             {getStatusBadge()}
-            {!session.is_draft && session.research_completed && (
-              <span className="text-xs text-green-600">✓ Research</span>
-            )}
             {!session.is_draft && session.analysis_completed && (
               <span className="text-xs text-green-600">✓ MVTA</span>
+            )}
+            {!session.is_draft && session.research_completed_count !== undefined && session.research_completed_count > 0 && (
+              session.research_completed_count === session.research_total_count ? (
+                <span className="text-xs text-green-600">✓ Research</span>
+              ) : (
+                <span className="text-xs text-yellow-600">
+                  {session.research_completed_count}/{session.research_total_count} Research
+                </span>
+              )
             )}
           </div>
         </div>

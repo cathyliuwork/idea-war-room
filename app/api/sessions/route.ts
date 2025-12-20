@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
   const limit = parseInt(searchParams.get('limit') || '10');
   const offset = parseInt(searchParams.get('offset') || '0');
 
-  // Fetch all sessions including drafts (left join with ideas)
+  // Fetch all sessions including drafts (left join with ideas) and research snapshots count
   // Note: Service role key bypasses RLS, so we must manually filter by user_id
   const { data: sessions, error } = await supabase
     .from('sessions')
@@ -36,7 +36,8 @@ export async function GET(request: NextRequest) {
       research_completed,
       analysis_completed,
       created_at,
-      ideas(structured_idea)
+      ideas(structured_idea),
+      research_snapshots(research_type)
     `)
     .eq('user_id', user.id) // CRITICAL: Filter by current user
     .order('created_at', { ascending: false })
@@ -73,10 +74,17 @@ export async function GET(request: NextRequest) {
       title = `Idea Analysis [${s.id}]`;
     }
 
+    // Count completed research types
+    const researchCompletedCount = Array.isArray(s.research_snapshots)
+      ? s.research_snapshots.length
+      : 0;
+
     return {
       id: s.id,
       status: s.status,
       research_completed: s.research_completed,
+      research_completed_count: researchCompletedCount,
+      research_total_count: 3, // competitor, community, regulatory
       analysis_completed: s.analysis_completed,
       created_at: s.created_at,
       high_concept: title,

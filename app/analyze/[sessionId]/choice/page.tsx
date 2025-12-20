@@ -23,6 +23,11 @@ interface SessionStatus {
   created_at: string;
 }
 
+interface ResearchTypeStatus {
+  completed: boolean;
+  snapshot_id?: string;
+}
+
 export default function ChoicePage() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
@@ -35,6 +40,8 @@ export default function ChoicePage() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoadingData, setIsLoadingData] = useState(true);
+  const [researchCompletedCount, setResearchCompletedCount] = useState(0);
+  const [researchTotalCount, setResearchTotalCount] = useState(3); // competitor, community, regulatory
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -43,7 +50,7 @@ export default function ChoicePage() {
     }
   }, [user, isLoading, router]);
 
-  // Fetch session status and idea data
+  // Fetch session status, idea data, and research status
   useEffect(() => {
     async function fetchData() {
       if (!sessionId) return;
@@ -51,21 +58,34 @@ export default function ChoicePage() {
       try {
         setIsLoadingData(true);
 
-        // Fetch session status
-        const statusRes = await fetch(`/api/sessions/${sessionId}/status`);
+        // Fetch session status, idea, and research status in parallel
+        const [statusRes, ideaRes, researchStatusRes] = await Promise.all([
+          fetch(`/api/sessions/${sessionId}/status`),
+          fetch(`/api/sessions/${sessionId}/idea`),
+          fetch(`/api/sessions/${sessionId}/research/status`),
+        ]);
+
         if (!statusRes.ok) {
           throw new Error('Failed to fetch session status');
         }
         const statusData = await statusRes.json();
         setSession(statusData.session);
 
-        // Fetch idea
-        const ideaRes = await fetch(`/api/sessions/${sessionId}/idea`);
         if (!ideaRes.ok) {
           throw new Error('Failed to fetch idea');
         }
         const ideaData = await ideaRes.json();
         setIdea(ideaData.idea.structured_idea);
+
+        // Parse research status to get completed count
+        if (researchStatusRes.ok) {
+          const researchData = await researchStatusRes.json();
+          const availableTypes = researchData.available_types as Record<string, ResearchTypeStatus>;
+          const completedCount = Object.values(availableTypes).filter(t => t.completed).length;
+          const totalCount = Object.keys(availableTypes).length;
+          setResearchCompletedCount(completedCount);
+          setResearchTotalCount(totalCount);
+        }
       } catch (err) {
         console.error('Error fetching data:', err);
         setError((err as Error).message);
@@ -155,6 +175,8 @@ export default function ChoicePage() {
           onStartResearch={handleStartResearch}
           onStartAnalysis={handleStartAnalysis}
           onViewReport={handleViewReport}
+          researchCompletedCount={researchCompletedCount}
+          researchTotalCount={researchTotalCount}
         />
       </div>
     </div>

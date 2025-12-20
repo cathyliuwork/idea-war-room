@@ -59,6 +59,7 @@ export interface Translations {
     sessionsRemaining: string;
     unlimitedSessions: string;
     viewReport: string;
+    viewDetails: string;
     continueAnalysis: string;
     inProgress: string;
     completed: string;
