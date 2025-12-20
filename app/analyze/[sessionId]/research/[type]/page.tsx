@@ -8,6 +8,7 @@ import {
   getResearchTypeConfig,
   ResearchType,
 } from '@/lib/constants/research';
+import { useTranslation } from '@/i18n';
 
 /**
  * Research Results Page (Dynamic Route)
@@ -28,6 +29,7 @@ interface ResearchSnapshot {
 }
 
 export default function ResearchResultsPage() {
+  const { t, language } = useTranslation();
   const { user, isLoading } = useAuth();
   const router = useRouter();
   const params = useParams();
@@ -123,16 +125,25 @@ export default function ResearchResultsPage() {
     fetchResults();
   }, [sessionId, type, isValid]);
 
+  // Get localized label for research type
+  const getLocalizedLabel = (researchType: string) => {
+    return t(`research.types.${researchType}.label`);
+  };
+
+  const getLocalizedDescription = (researchType: string) => {
+    return t(`research.types.${researchType}.description`);
+  };
+
   // Invalid type
   if (!isValid) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center max-w-md">
           <h2 className="text-2xl font-bold text-text-primary mb-4">
-            Invalid Research Type
+            {t('research.invalidType')}
           </h2>
           <p className="text-text-secondary mb-6">
-            The research type &quot;{type}&quot; is not recognized.
+            {t('research.typeNotRecognized').replace('{type}', type)}
           </p>
           <button
             onClick={() =>
@@ -140,7 +151,7 @@ export default function ResearchResultsPage() {
             }
             className="px-6 py-3 bg-brand-primary text-white rounded-lg hover:bg-brand-hover transition-colors"
           >
-            Back to Research Types
+            {t('research.backToResearchTypes')}
           </button>
         </div>
       </div>
@@ -153,7 +164,7 @@ export default function ResearchResultsPage() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-primary mx-auto mb-4"></div>
-          <p className="text-text-secondary">Loading results...</p>
+          <p className="text-text-secondary">{t('research.loadingResults')}</p>
         </div>
       </div>
     );
@@ -166,8 +177,8 @@ export default function ResearchResultsPage() {
         <div className="text-center max-w-md">
           <h2 className="text-2xl font-bold text-text-primary mb-4">
             {error.includes('not found')
-              ? 'No Results Found'
-              : 'Error Loading Results'}
+              ? t('research.noResultsFound')
+              : t('research.errorLoadingResults')}
           </h2>
           <p className="text-text-secondary mb-6">{error}</p>
           <div className="space-x-4">
@@ -177,7 +188,7 @@ export default function ResearchResultsPage() {
               }
               className="px-6 py-3 bg-brand-primary text-white rounded-lg hover:bg-brand-hover transition-colors"
             >
-              Run Research
+              {t('research.runResearch')}
             </button>
             <button
               onClick={() =>
@@ -185,7 +196,7 @@ export default function ResearchResultsPage() {
               }
               className="px-6 py-3 border border-border-medium text-text-primary rounded-lg hover:border-border-dark transition-colors"
             >
-              Back to Research Types
+              {t('research.backToResearchTypes')}
             </button>
           </div>
         </div>
@@ -206,9 +217,9 @@ export default function ResearchResultsPage() {
           <div className="flex items-start justify-between mb-4">
             <div>
               <h1 className="text-3xl font-bold text-text-primary mb-2">
-                {config?.icon} {config?.label} Results
+                {config?.icon} {getLocalizedLabel(type)} {t('research.results')}
               </h1>
-              <p className="text-text-secondary">{config?.description}</p>
+              <p className="text-text-secondary">{getLocalizedDescription(type)}</p>
             </div>
             <button
               onClick={() =>
@@ -216,23 +227,23 @@ export default function ResearchResultsPage() {
               }
               className="px-6 py-3 border border-border-medium text-text-primary rounded-lg hover:border-border-dark transition-colors"
             >
-              Back to Research Page
+              {t('research.backToResearchPage')}
             </button>
           </div>
 
           {/* Metadata */}
           <div className="bg-surface-elevated border border-border-light rounded-lg px-4 py-3 flex items-center justify-between">
             <div className="text-sm text-text-secondary">
-              Completed on{' '}
+              {t('research.completedOn')}{' '}
               <span className="font-semibold text-text-primary">
-                {new Date(snapshot.created_at).toLocaleString()}
+                {new Date(snapshot.created_at).toLocaleString(language === 'zh' ? 'zh-CN' : 'en-US')}
               </span>
             </div>
             <div className="text-sm text-text-secondary">
               <span className="font-semibold text-text-primary">
                 {snapshot.results.length}
               </span>{' '}
-              results found
+              {t('research.resultsFound')}
             </div>
           </div>
         </div>
@@ -240,7 +251,7 @@ export default function ResearchResultsPage() {
         {/* Queries Used */}
         <details className="mb-8 bg-surface-elevated border border-border-light rounded-lg">
           <summary className="px-6 py-4 cursor-pointer font-semibold text-text-primary hover:bg-surface-base transition-colors">
-            📋 Search Queries Used ({snapshot.queries.length})
+            📋 {t('research.searchQueriesUsed')} ({snapshot.queries.length})
           </summary>
           <div className="px-6 pb-4 space-y-2">
             {snapshot.queries.map((query, index) => (
@@ -257,7 +268,7 @@ export default function ResearchResultsPage() {
         {/* Results */}
         <div>
           <h2 className="text-2xl font-bold text-text-primary mb-6">
-            Research Results
+            {t('research.researchResults')}
           </h2>
 
           {snapshot.results.length === 0 ? (
@@ -268,12 +279,10 @@ export default function ResearchResultsPage() {
                   <div className="mb-6">
                     <div className="text-5xl mb-4">⚠️</div>
                     <h3 className="text-xl font-bold text-text-primary mb-2">
-                      Research May Have Failed
+                      {t('research.researchMayHaveFailed')}
                     </h3>
                     <p className="text-text-secondary mb-4">
-                      The research process completed but no results were
-                      generated. This might be due to an API error or rate
-                      limiting.
+                      {t('research.researchFailedDesc')}
                     </p>
                   </div>
                   <button
@@ -281,7 +290,7 @@ export default function ResearchResultsPage() {
                     disabled={isRetrying}
                     className="px-6 py-3 bg-brand-primary text-white rounded-lg hover:bg-brand-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isRetrying ? 'Retrying...' : 'Retry Research'}
+                    {isRetrying ? t('research.retrying') : t('research.retryResearch')}
                   </button>
                 </>
               ) : (
@@ -289,7 +298,7 @@ export default function ResearchResultsPage() {
                 <>
                   <div className="text-5xl mb-4">🔍</div>
                   <p className="text-text-secondary">
-                    No results found for this research type.
+                    {t('research.noResultsForType')}
                   </p>
                 </>
               )}
@@ -302,6 +311,7 @@ export default function ResearchResultsPage() {
                   result={result}
                   type={type as ResearchType}
                   index={index}
+                  t={t}
                 />
               ))}
             </div>
@@ -320,32 +330,34 @@ function ResultCard({
   result,
   type,
   index,
+  t,
 }: {
   result: any;
   type: ResearchType;
   index: number;
+  t: (key: string) => string;
 }) {
   // Type-specific rendering
   switch (type) {
     case 'competitor':
-      return <CompetitorCard result={result} index={index} />;
+      return <CompetitorCard result={result} index={index} t={t} />;
     case 'community':
-      return <CommunityCard result={result} index={index} />;
+      return <CommunityCard result={result} index={index} t={t} />;
     case 'regulatory':
-      return <RegulatoryCard result={result} index={index} />;
+      return <RegulatoryCard result={result} index={index} t={t} />;
     default:
       // Fallback for future types: generic JSON display
-      return <GenericCard result={result} index={index} />;
+      return <GenericCard result={result} index={index} t={t} />;
   }
 }
 
-function CompetitorCard({ result, index }: { result: any; index: number }) {
+function CompetitorCard({ result, index, t }: { result: any; index: number; t: (key: string) => string }) {
   return (
     <div className="bg-surface-elevated border border-border-light rounded-lg p-6">
       <div className="flex items-start justify-between mb-4">
         <div>
           <h3 className="text-lg font-bold text-text-primary">
-            {result.name || `Competitor ${index + 1}`}
+            {result.name || `${t('research.types.competitor.label')} ${index + 1}`}
           </h3>
           {result.url && (
             <a
@@ -366,7 +378,7 @@ function CompetitorCard({ result, index }: { result: any; index: number }) {
 
       {result.pricing && (
         <p className="text-sm text-text-secondary mb-4">
-          <strong>Pricing:</strong> {result.pricing}
+          <strong>{t('research.pricing')}:</strong> {result.pricing}
         </p>
       )}
 
@@ -374,7 +386,7 @@ function CompetitorCard({ result, index }: { result: any; index: number }) {
         {result.strengths && result.strengths.length > 0 && (
           <div>
             <p className="text-xs font-semibold text-green-600 mb-2">
-              Strengths:
+              {t('research.strengths')}:
             </p>
             <ul className="text-sm text-text-secondary space-y-1">
               {result.strengths.map((s: string, i: number) => (
@@ -387,7 +399,7 @@ function CompetitorCard({ result, index }: { result: any; index: number }) {
         {result.weaknesses && result.weaknesses.length > 0 && (
           <div>
             <p className="text-xs font-semibold text-red-600 mb-2">
-              Weaknesses:
+              {t('research.weaknesses')}:
             </p>
             <ul className="text-sm text-text-secondary space-y-1">
               {result.weaknesses.map((w: string, i: number) => (
@@ -401,7 +413,7 @@ function CompetitorCard({ result, index }: { result: any; index: number }) {
   );
 }
 
-function CommunityCard({ result, index }: { result: any; index: number }) {
+function CommunityCard({ result, index, t }: { result: any; index: number; t: (key: string) => string }) {
   const sentimentColors: Record<string, string> = {
     positive: 'bg-green-500/20 text-green-600',
     negative: 'bg-red-500/20 text-red-600',
@@ -412,7 +424,7 @@ function CommunityCard({ result, index }: { result: any; index: number }) {
     <div className="bg-surface-elevated border border-border-light rounded-lg p-6">
       <div className="flex items-start justify-between mb-3">
         <h3 className="text-lg font-semibold text-text-primary">
-          {result.title || `Discussion ${index + 1}`}
+          {result.title || `${t('research.types.community.label')} ${index + 1}`}
         </h3>
         {result.sentiment && (
           <span
@@ -431,7 +443,7 @@ function CommunityCard({ result, index }: { result: any; index: number }) {
 
       {result.source && (
         <p className="text-xs text-text-tertiary mb-2">
-          Source: {result.source}
+          {t('research.source')}: {result.source}
         </p>
       )}
 
@@ -455,31 +467,31 @@ function CommunityCard({ result, index }: { result: any; index: number }) {
           rel="noopener noreferrer"
           className="text-sm text-brand-primary hover:underline mt-3 inline-block"
         >
-          View original discussion →
+          {t('research.viewOriginalDiscussion')} →
         </a>
       )}
     </div>
   );
 }
 
-function RegulatoryCard({ result, index }: { result: any; index: number }) {
+function RegulatoryCard({ result, index, t }: { result: any; index: number; t: (key: string) => string }) {
   return (
     <div className="bg-surface-elevated border border-border-light rounded-lg p-6">
       <h3 className="text-lg font-bold text-text-primary mb-3">
-        {result.name || `Regulation ${index + 1}`}
+        {result.name || result.regulation || `${t('research.types.regulatory.label')} ${index + 1}`}
       </h3>
 
       {result.summary && (
         <p className="text-sm text-text-secondary mb-4">{result.summary}</p>
       )}
 
-      {result.requirements && result.requirements.length > 0 && (
+      {(result.requirements || result.compliance_requirements) && (result.requirements || result.compliance_requirements).length > 0 && (
         <div className="mb-4">
           <p className="text-sm font-semibold text-text-primary mb-2">
-            Compliance Requirements:
+            {t('research.complianceRequirements')}:
           </p>
           <ul className="text-sm text-text-secondary space-y-1">
-            {result.requirements.map((req: string, i: number) => (
+            {(result.requirements || result.compliance_requirements).map((req: string, i: number) => (
               <li key={i}>• {req}</li>
             ))}
           </ul>
@@ -489,7 +501,7 @@ function RegulatoryCard({ result, index }: { result: any; index: number }) {
       {result.penalties && (
         <div className="bg-red-50/10 border border-red-500/20 rounded p-3">
           <p className="text-sm font-semibold text-red-600 mb-1">
-            Penalties for Non-Compliance:
+            {t('research.penaltiesForNonCompliance')}:
           </p>
           <p className="text-sm text-text-secondary">{result.penalties}</p>
         </div>
@@ -497,18 +509,18 @@ function RegulatoryCard({ result, index }: { result: any; index: number }) {
 
       {result.applicability && (
         <p className="text-xs text-text-tertiary mt-3">
-          <strong>Applicability:</strong> {result.applicability}
+          <strong>{t('research.applicability')}:</strong> {result.applicability}
         </p>
       )}
     </div>
   );
 }
 
-function GenericCard({ result, index }: { result: any; index: number }) {
+function GenericCard({ result, index, t }: { result: any; index: number; t: (key: string) => string }) {
   return (
     <div className="bg-surface-elevated border border-border-light rounded-lg p-6">
       <h3 className="text-lg font-bold text-text-primary mb-3">
-        Result {index + 1}
+        {t('research.result')} {index + 1}
       </h3>
       <pre className="text-xs text-text-secondary overflow-auto bg-surface-base rounded p-4">
         {JSON.stringify(result, null, 2)}

@@ -2,12 +2,14 @@
 
 import { UseFormReturn } from 'react-hook-form';
 import { StructuredIdea } from '@/lib/validation/schemas';
+import { useTranslation } from '@/i18n';
 
 interface Step2EnvironmentProps {
   form: UseFormReturn<StructuredIdea>;
 }
 
 export default function Step2Environment({ form }: Step2EnvironmentProps) {
+  const { t } = useTranslation();
   const {
     register,
     watch,
@@ -29,23 +31,23 @@ export default function Step2Environment({ form }: Step2EnvironmentProps) {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-text-primary mb-2">
-          Business Context
+          {t('intake.step2Title')}
         </h2>
         <p className="text-text-secondary">
-          Help us understand your target market and competitive landscape.
+          {t('intake.step2Desc')}
         </p>
       </div>
 
       {/* User Persona */}
       <div>
         <label className="block text-sm font-medium text-text-primary mb-2">
-          Target User Persona <span className="text-severity-1-catastrophic">*</span>
+          {t('intake.userPersonaLabel')} <span className="text-severity-1-catastrophic">*</span>
         </label>
         <textarea
           {...register('environment.user_persona')}
           maxLength={300}
           rows={4}
-          placeholder="Solo founders and early-stage entrepreneurs (25-45 years old) who are technical enough to understand product development but lack market validation experience"
+          placeholder={t('intake.userPersonaPlaceholder')}
           className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-brand-light outline-none transition-colors resize-none text-text-primary ${
             errors.environment?.user_persona
               ? 'border-severity-1-catastrophic'
@@ -67,13 +69,13 @@ export default function Step2Environment({ form }: Step2EnvironmentProps) {
       {/* Competitive Landscape */}
       <div>
         <label className="block text-sm font-medium text-text-primary mb-2">
-          Competitive Landscape <span className="text-severity-1-catastrophic">*</span>
+          {t('intake.competitiveLandscapeLabel')} <span className="text-severity-1-catastrophic">*</span>
         </label>
         <textarea
           {...register('environment.competitive_landscape')}
           maxLength={400}
           rows={5}
-          placeholder="Similar tools: ProductHunt validation, BetaList feedback, Reddit communities. None combine automated research with adversarial analysis."
+          placeholder={t('intake.competitiveLandscapePlaceholder')}
           className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-brand-light outline-none transition-colors resize-none text-text-primary ${
             errors.environment?.competitive_landscape
               ? 'border-severity-1-catastrophic'
@@ -95,13 +97,13 @@ export default function Step2Environment({ form }: Step2EnvironmentProps) {
       {/* Regulatory Context */}
       <div>
         <label className="block text-sm font-medium text-text-primary mb-2">
-          Regulatory Context (Leave blank if not applicable)
+          {t('intake.regulatoryContextLabel')}
         </label>
         <textarea
           {...register('environment.regulatory_context')}
           maxLength={400}
           rows={4}
-          placeholder="Describe relevant regulations (GDPR, financial services, healthcare, etc.) if applicable"
+          placeholder={t('intake.regulatoryContextPlaceholder')}
           className="w-full px-4 py-3 border border-border-medium rounded-lg focus:border-brand-primary focus:ring-2 focus:ring-brand-light outline-none transition-colors resize-none text-text-primary"
         />
         <div className="flex justify-end mt-1">

@@ -4,6 +4,8 @@ import { verifySessionOwnership } from '@/lib/auth/session-ownership';
 import { conductResearch } from '@/lib/search/research-engine';
 import { isValidResearchType, ResearchType } from '@/lib/constants/research';
 import type { TypedResearchResult } from '@/lib/validation/schemas';
+import { getLanguage } from '@/i18n/get-language';
+import { getValidPromptLanguage } from '@/lib/llm/prompts/language-instructions';
 
 /**
  * Research API Endpoint (UPDATED for multi-type support)
@@ -90,8 +92,11 @@ export async function POST(
       );
     }
 
-    // 2. Conduct research (only the requested type)
-    console.log(`Starting ${type} research for session ${params.sessionId}...`);
+    // 2. Get language from cookie for synthesis output
+    const language = getValidPromptLanguage(getLanguage());
+
+    // 3. Conduct research (only the requested type)
+    console.log(`Starting ${type} research for session ${params.sessionId} in ${language}...`);
     if (reuseQueries) {
       console.log(`♻️ Reusing ${reuseQueries.length} saved queries (skipping query generation)`);
     }
@@ -99,7 +104,8 @@ export async function POST(
     const researchResult = await conductResearch(
       idea.structured_idea,
       type as any,
-      reuseQueries || undefined
+      reuseQueries || undefined,
+      language
     );
 
     // Phase 2: Use typed result directly (no need to extract from old format)

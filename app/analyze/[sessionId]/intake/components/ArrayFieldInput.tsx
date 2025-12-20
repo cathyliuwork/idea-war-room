@@ -10,6 +10,8 @@ interface ArrayFieldInputProps {
   values: string[];
   onChange: (values: string[]) => void;
   error?: string;
+  addButtonLabel?: string;
+  noItemsText?: string;
 }
 
 export default function ArrayFieldInput({
@@ -20,6 +22,8 @@ export default function ArrayFieldInput({
   values,
   onChange,
   error,
+  addButtonLabel = 'Add Another',
+  noItemsText = 'No items added yet. Click the button below to add one.',
 }: ArrayFieldInputProps) {
   const handleAdd = () => {
     onChange([...values, '']);
@@ -56,7 +60,7 @@ export default function ArrayFieldInput({
       <div className="space-y-2">
         {values.length === 0 && (
           <p className="text-sm text-text-tertiary italic">
-            No items added yet. Click the button below to add one.
+            {noItemsText}
           </p>
         )}
 
@@ -94,7 +98,7 @@ export default function ArrayFieldInput({
           className="flex items-center gap-2 px-4 py-2 text-sm text-brand-primary hover:text-brand-hover transition-colors"
         >
           <Plus className="w-4 h-4" />
-          <span>Add Another {label.replace(/s$/, '')}</span>
+          <span>{addButtonLabel}</span>
         </button>
       </div>
 

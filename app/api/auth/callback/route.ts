@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyJWT } from '@/lib/auth/jwt';
 import { upsertUserProfile } from '@/lib/auth/user';
 import { setSessionCookie } from '@/lib/auth/session';
+import { SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE } from '@/i18n';
+import { LANGUAGE_COOKIE_NAME } from '@/i18n/get-language-client';
 
 // CORS configuration - allow all origins for auth callback
 // This is safe because the callback only processes valid JWT tokens
@@ -35,6 +37,7 @@ export async function GET(request: NextRequest) {
   try {
     const url = new URL(request.url);
     const token = url.searchParams.get('token');
+    const langParam = url.searchParams.get('lang');
 
     if (!token) {
       const response = NextResponse.json(
@@ -43,6 +46,11 @@ export async function GET(request: NextRequest) {
       );
       return addCorsHeaders(response);
     }
+
+    // Validate and normalize language parameter
+    const language = langParam && SUPPORTED_LANGUAGES.includes(langParam as any)
+      ? langParam
+      : DEFAULT_LANGUAGE;
 
     // Verify JWT signature and expiration
     const payload = verifyJWT(token);
@@ -55,6 +63,15 @@ export async function GET(request: NextRequest) {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.url;
     const response = NextResponse.redirect(new URL('/dashboard', baseUrl));
     setSessionCookie(response, token);
+
+    // Set language cookie (1 year expiration)
+    response.cookies.set(LANGUAGE_COOKIE_NAME, language, {
+      httpOnly: false, // Accessible from client-side for React context
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 365, // 1 year
+      path: '/',
+    });
 
     return addCorsHeaders(response);
   } catch (error) {

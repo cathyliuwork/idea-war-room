@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useTranslation } from '@/i18n';
 
 interface SessionCardProps {
   session: {
@@ -16,22 +17,23 @@ interface SessionCardProps {
 
 export default function SessionCard({ session }: SessionCardProps) {
   const router = useRouter();
+  const { t, language } = useTranslation();
 
   const getStatusBadge = () => {
     // Draft sessions get special badge
     if (session.is_draft) {
       return (
         <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
-          Draft
+          {t('dashboard.draft')}
         </span>
       );
     }
 
     const statusConfig = {
-      intake: { label: 'In Progress', color: 'bg-yellow-100 text-yellow-800' },
-      choice: { label: 'Ready', color: 'bg-blue-100 text-blue-800' },
-      completed: { label: 'Completed', color: 'bg-green-100 text-green-800' },
-      failed: { label: 'Failed', color: 'bg-red-100 text-red-800' },
+      intake: { label: t('dashboard.inProgress'), color: 'bg-yellow-100 text-yellow-800' },
+      choice: { label: t('dashboard.inProgress'), color: 'bg-blue-100 text-blue-800' },
+      completed: { label: t('dashboard.completed'), color: 'bg-green-100 text-green-800' },
+      failed: { label: t('common.error'), color: 'bg-red-100 text-red-800' },
     };
 
     const config = statusConfig[session.status];
@@ -52,7 +54,7 @@ export default function SessionCard({ session }: SessionCardProps) {
           onClick={() => router.push(`/analyze/${session.id}/intake`)}
           className="px-4 py-2 bg-brand-primary text-white rounded hover:bg-brand-hover"
         >
-          Continue
+          {t('dashboard.continueAnalysis')}
         </button>
       );
     }
@@ -63,7 +65,7 @@ export default function SessionCard({ session }: SessionCardProps) {
           onClick={() => router.push(`/analyze/${session.id}/report`)}
           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
         >
-          View Report
+          {t('dashboard.viewReport')}
         </button>
       );
     }
@@ -74,7 +76,7 @@ export default function SessionCard({ session }: SessionCardProps) {
           onClick={() => router.push(`/analyze/${session.id}/analysis`)}
           className="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700"
         >
-          Retry Analysis
+          {t('common.retry')}
         </button>
       );
     }
@@ -90,20 +92,21 @@ export default function SessionCard({ session }: SessionCardProps) {
         onClick={() => router.push(resumePath)}
         className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
       >
-        Resume
+        {t('dashboard.continueAnalysis')}
       </button>
     );
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
+    const locale = language === 'zh' ? 'zh-CN' : 'en-US';
+    return date.toLocaleDateString(locale, {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
       hour: 'numeric',
       minute: '2-digit',
-      hour12: true,
+      hour12: language !== 'zh',
     });
   };
 

@@ -1,4 +1,7 @@
-import { ResearchTypeConfig } from '@/lib/constants/research';
+'use client';
+
+import { ResearchTypeConfig, ResearchType } from '@/lib/constants/research';
+import { useTranslation } from '@/i18n';
 
 interface ResearchTypeCardProps {
   config: ResearchTypeConfig;
@@ -11,6 +14,19 @@ export default function ResearchTypeCard({
   completed,
   onClick,
 }: ResearchTypeCardProps) {
+  const { t } = useTranslation();
+
+  // Get localized label and description based on research type
+  const getLocalizedLabel = (type: ResearchType) => {
+    const typeKey = type as 'competitor' | 'community' | 'regulatory';
+    return t(`research.types.${typeKey}.label`);
+  };
+
+  const getLocalizedDescription = (type: ResearchType) => {
+    const typeKey = type as 'competitor' | 'community' | 'regulatory';
+    return t(`research.types.${typeKey}.description`);
+  };
+
   return (
     <button
       onClick={onClick}
@@ -27,29 +43,29 @@ export default function ResearchTypeCard({
 
       {/* Title */}
       <h3 className="text-xl font-bold text-text-primary mb-2">
-        {config.label}
+        {getLocalizedLabel(config.id)}
       </h3>
 
       {/* Description */}
       <p className="text-sm text-text-secondary mb-4 min-h-[3rem]">
-        {config.description}
+        {getLocalizedDescription(config.id)}
       </p>
 
       {/* Status Badge */}
       <div className="flex items-center justify-between mt-auto">
         {completed ? (
           <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-500/20 text-green-600">
-            ✓ Completed
+            ✓ {t('research.completed')}
           </span>
         ) : (
           <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-surface-base text-text-tertiary">
-            Not Started
+            {t('research.notStarted')}
           </span>
         )}
 
         {/* Action hint */}
         <span className="text-xs text-text-tertiary">
-          {completed ? 'View Results →' : 'Start Research →'}
+          {completed ? `${t('research.viewResults')} →` : `${t('research.startResearch')} →`}
         </span>
       </div>
 

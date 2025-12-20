@@ -1,6 +1,13 @@
+import { getTranslations } from '@/i18n';
+import { getLanguage } from '@/i18n/get-language';
+
 export default function Home() {
   const isMockMode = process.env.AUTH_MODE === 'mock';
   const parentLoginUrl = process.env.NEXT_PUBLIC_PARENT_LOGIN_URL || '/';
+
+  // Get translations
+  const language = getLanguage();
+  const t = getTranslations(language);
 
   // Mock mode: show mock login button
   if (isMockMode) {
@@ -8,16 +15,16 @@ export default function Home() {
       <main className="flex min-h-screen flex-col items-center justify-center p-24">
         <div className="text-center">
           <h1 className="text-4xl font-bold text-text-primary mb-4">
-            Idea War Room
+            {t.home.title}
           </h1>
           <p className="text-lg text-text-secondary mb-8">
-            AI-powered Multi-Vector Threat Analysis for startup ideas
+            {t.home.subtitle}
           </p>
           <a
             href="/api/auth/mock/login"
             className="px-6 py-3 bg-brand-primary text-white rounded-lg hover:bg-brand-hover transition-colors"
           >
-            Get Started (Mock Login)
+            {t.home.mockLogin}
           </a>
         </div>
       </main>
@@ -50,10 +57,10 @@ export default function Home() {
         {/* Content Card */}
         <div className="bg-bg-primary rounded-2xl shadow-card p-8 text-center">
           <h1 className="text-3xl font-bold text-text-primary mb-3">
-            Idea War Room
+            {t.home.title}
           </h1>
           <p className="text-text-secondary mb-6">
-            AI-powered Idea Analysis and Validation
+            {t.home.subtitle}
           </p>
 
           <a
@@ -73,17 +80,17 @@ export default function Home() {
                 d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
               />
             </svg>
-            Sign In to Continue
+            {t.home.signIn}
           </a>
 
           <p className="text-sm text-text-secondary mt-4">
-            Authentication is required via our main platform.
+            {t.home.authRequired}
           </p>
         </div>
 
         {/* Footer */}
         <p className="text-center text-xs text-text-secondary mt-6">
-          Powered by Solopreneur.Global
+          {t.home.footer}
         </p>
       </div>
     </main>

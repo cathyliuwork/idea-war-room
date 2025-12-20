@@ -8,6 +8,7 @@ import EmptyState from './components/EmptyState';
 import QuotaDisplay from './components/QuotaDisplay';
 import UpgradePrompt from './components/UpgradePrompt';
 import { SessionQuota } from '@/types/quota';
+import { useTranslation } from '@/i18n';
 
 /**
  * Dashboard Page
@@ -18,6 +19,7 @@ import { SessionQuota } from '@/types/quota';
 export default function Dashboard() {
   const { user, isLoading, isMockMode, signOut, goToParent } = useAuth();
   const router = useRouter();
+  const { t } = useTranslation();
   const [sessions, setSessions] = useState<any[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(true);
   const [quota, setQuota] = useState<SessionQuota | null>(null);
@@ -58,7 +60,7 @@ export default function Dashboard() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-text-secondary">Loading...</div>
+        <div className="text-text-secondary">{t('common.loading')}</div>
       </div>
     );
   }
@@ -94,9 +96,9 @@ export default function Dashboard() {
       {/* Dev Mode Warning Banner */}
       {process.env.NEXT_PUBLIC_AUTH_MODE === 'mock' && (
         <div className="bg-severity-3-bg border-b-2 border-severity-3-significant px-4 py-2 text-center text-sm">
-          <span className="font-semibold">⚠️ Dev Mode Active</span>
+          <span className="font-semibold">⚠️ {t('dashboard.devModeWarning')}</span>
           <span className="text-text-secondary ml-2">
-            Mock authentication is enabled
+            {t('dashboard.mockAuthEnabled')}
           </span>
         </div>
       )}
@@ -107,10 +109,10 @@ export default function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-text-primary">
-                Idea War Room
+                {t('dashboard.title')}
               </h1>
               <p className="text-sm text-text-secondary mt-1">
-                AI-powered Idea Analysis and Validation
+                {t('dashboard.subtitle')}
               </p>
             </div>
 
@@ -126,14 +128,14 @@ export default function Dashboard() {
                   onClick={signOut}
                   className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-text-primary border border-border-medium rounded-lg hover:border-border-dark transition-colors"
                 >
-                  Logout
+                  {t('dashboard.logout')}
                 </button>
               ) : (
                 <button
                   onClick={goToParent}
                   className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-text-primary border border-border-medium rounded-lg hover:border-border-dark transition-colors"
                 >
-                  Back to Home
+                  {t('dashboard.backToParent')}
                 </button>
               )}
             </div>
@@ -152,12 +154,11 @@ export default function Dashboard() {
 
         <div className="bg-bg-primary rounded-lg shadow-card p-8 mb-8">
           <h2 className="text-xl font-semibold text-text-primary mb-4">
-            Welcome to Idea War Room
+            {t('dashboard.welcome')}
           </h2>
 
           <p className="text-text-secondary mb-6">
-            Ready to stress-test your startup idea? Start a new analysis session
-            to get evidence-backed adversarial insights in 10-15 minutes.
+            {t('dashboard.welcomeDesc')}
           </p>
 
           {createError && (
@@ -175,7 +176,7 @@ export default function Dashboard() {
             onClick={handleNewAnalysis}
             disabled={isCreateDisabled}
           >
-            Start New Analysis
+            {t('dashboard.startNewAnalysis')}
           </button>
 
           {/* Remaining sessions hint */}
@@ -184,7 +185,7 @@ export default function Dashboard() {
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              {quota.remaining} free {quota.remaining === 1 ? 'session' : 'sessions'} remaining
+              {t('dashboard.sessionsRemaining', { count: quota.remaining })}
             </p>
           )}
           {quota && quota.limit === null && (
@@ -192,7 +193,7 @@ export default function Dashboard() {
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              Unlimited sessions available
+              {t('dashboard.unlimitedSessions')}
             </p>
           )}
         </div>
@@ -201,7 +202,7 @@ export default function Dashboard() {
         <div className="bg-bg-primary rounded-lg shadow-card p-8">
           <div className="flex justify-between items-start mb-6">
             <h3 className="text-lg font-semibold text-text-primary">
-              Recent Sessions
+              {t('dashboard.recentSessions')}
             </h3>
             {quota && (
               <div className="w-48">
@@ -211,7 +212,7 @@ export default function Dashboard() {
           </div>
 
           {sessionsLoading ? (
-            <p className="text-text-secondary text-sm">Loading sessions...</p>
+            <p className="text-text-secondary text-sm">{t('dashboard.loadingSessions')}</p>
           ) : sessions.length === 0 ? (
             <EmptyState onNewAnalysis={handleNewAnalysis} quota={quota} />
           ) : (

@@ -780,10 +780,75 @@
 
 ---
 
+## Internationalization (i18n)
+
+### Bilingual Support
+
+The application supports English and Chinese (Simplified). Language is determined by parent project and cannot be changed by users.
+
+**See [S-06: Internationalization](./S-06-internationalization.md) for full specification.**
+
+### Chinese Typography
+
+For Chinese text, extend the font stack to include Chinese-specific fonts:
+
+```css
+:root {
+  /* Extended font stack for Chinese support */
+  --font-sans-chinese:
+    'Inter',                    /* English text */
+    system-ui,                  /* System default */
+    -apple-system,              /* macOS/iOS */
+    'Segoe UI',                 /* Windows */
+    'Noto Sans SC',             /* Google's Chinese font */
+    'PingFang SC',              /* macOS Chinese */
+    'Microsoft YaHei',          /* Windows Chinese */
+    'Hiragino Sans GB',         /* Older macOS */
+    sans-serif;
+}
+```
+
+**Font Loading Strategy**:
+- English: Continue using `next/font` for Inter
+- Chinese: Use system fonts (no additional font loading)
+- Fallback: System default Chinese fonts available on all platforms
+
+### Text Length Considerations
+
+Chinese text is typically **30-50% shorter** than equivalent English text:
+
+| Content Type | English | Chinese | Ratio |
+|--------------|---------|---------|-------|
+| Button labels | "Start New Analysis" | "开始新分析" | ~50% |
+| Form labels | "Describe your idea in one sentence" | "用一句话描述你的想法" | ~60% |
+| Paragraphs | Long descriptions | Shorter equivalent | ~60-70% |
+
+**Design Implications**:
+- Buttons and labels may appear tighter in Chinese
+- No need for major layout adjustments
+- Character count validation may need adjustment (Chinese characters vs English words)
+
+### Translation Key Naming
+
+Follow hierarchical naming convention:
+
+```
+{page}.{section}.{element}
+
+Examples:
+- dashboard.welcome
+- intake.step1.highConceptLabel
+- report.severity.catastrophic
+- common.loading
+```
+
+---
+
 ## Related Documents
 
 - [S-00: Architecture Overview](./S-00-architecture.md)
 - [S-02: Testing Strategy](./S-02-testing-strategy.md)
+- [S-06: Internationalization](./S-06-internationalization.md) - i18n specification
 - [F-02: Idea Intake Form](../features/F-02-idea-intake-form.md) - Implements form design patterns
 - [F-05: Damage Report Display](../features/F-05-damage-report-display.md) - Primary UI implementation
 

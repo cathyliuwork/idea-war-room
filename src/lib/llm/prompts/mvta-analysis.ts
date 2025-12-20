@@ -7,6 +7,7 @@ import type {
   RegulatoryResearch,
 } from '@/lib/validation/schemas';
 import { MVTAReportSchema } from '@/lib/validation/schemas';
+import { getLanguageInstruction, PromptLanguage } from './language-instructions';
 
 /**
  * Prompt C: MVTA Red Team Analysis
@@ -127,8 +128,12 @@ type ResearchContext = {
  */
 export async function runMVTAAnalysis(
   structuredIdea: StructuredIdea,
-  researchContext?: ResearchContext
+  researchContext?: ResearchContext,
+  language: PromptLanguage = 'en'
 ): Promise<MVTAReport> {
+  // Add language instructions to system prompt
+  const systemPromptWithLang = SYSTEM_PROMPT + getLanguageInstruction(language);
+
   // MVTA runs independently without research data
   const userPrompt = `Startup Idea:
 High Concept: ${structuredIdea.high_concept}
@@ -155,7 +160,7 @@ Execute MVTA red team analysis. Output ONLY the JSON.`;
 
   const response = await callLLMWithRetry({
     messages: [
-      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'system', content: systemPromptWithLang },
       { role: 'user', content: userPrompt },
     ],
     model: 'grok-4-fast', // Switched from gemini-2.5-pro due to 500 errors

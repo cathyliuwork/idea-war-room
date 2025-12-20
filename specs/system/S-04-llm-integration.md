@@ -1,7 +1,7 @@
 # S-04: LLM Integration
 
-**Version**: 1.0
-**Last Updated**: 2025-12-08
+**Version**: 1.1
+**Last Updated**: 2025-12-19
 **Status**: ✅ Spec Complete
 
 ---
@@ -772,12 +772,172 @@ See [S-02: Testing Strategy](./S-02-testing-strategy.md) for full details.
 
 ---
 
+## Internationalization (Language-Aware Prompts)
+
+All prompts support language-aware output generation for bilingual (English/Chinese) support.
+
+**See [S-06: Internationalization](./S-06-internationalization.md) for full specification.**
+
+### Language Instructions Module
+
+**File**: `/src/lib/llm/prompts/language-instructions.ts`
+
+```typescript
+export type PromptLanguage = 'en' | 'zh';
+
+export const LANGUAGE_INSTRUCTIONS = {
+  en: {
+    outputLanguage: 'Output all text content in English.',
+    culturalContext: 'Use examples relevant to global/Western markets.',
+  },
+  zh: {
+    outputLanguage: '请使用中文输出所有文本内容。保留专业术语（如MVTA、ROI、KPI等）为英文。',
+    culturalContext: '使用与中国市场相关的案例和背景。考虑中国特有的监管环境和商业模式。',
+  },
+} as const;
+
+/**
+ * Get language instruction block to append to system prompt
+ */
+export function getLanguageInstruction(language: PromptLanguage): string {
+  const instruction = LANGUAGE_INSTRUCTIONS[language];
+  return `
+
+## Language Requirements
+${instruction.outputLanguage}
+${instruction.culturalContext}
+`;
+}
+```
+
+### Integration with Prompts
+
+All prompt functions that produce user-facing output accept a `language` parameter:
+
+#### MVTA Analysis
+
+```typescript
+export async function runMVTAAnalysis(
+  ideaSchema: StructuredIdea,
+  researchContext?: ResearchContext,
+  language: PromptLanguage = 'en'
+): Promise<MVTAReport> {
+  const languageInstruction = getLanguageInstruction(language);
+  const systemPromptWithLang = `${SYSTEM_PROMPT_MVTA_ANALYSIS}${languageInstruction}`;
+
+  const response = await callLLMWithRetry({
+    messages: [
+      { role: 'system', content: systemPromptWithLang },
+      { role: 'user', content: USER_PROMPT_MVTA_ANALYSIS(ideaSchema) }
+    ],
+    // ... rest of config
+  });
+
+  return JSON.parse(response.content);
+}
+```
+
+#### Research Synthesis Functions
+
+All three synthesis functions in `/src/lib/llm/prompts/synthesize-research.ts` support language output:
+
+```typescript
+// Competitor synthesis - outputs summary, strengths, weaknesses in target language
+export async function synthesizeCompetitors(
+  searchResults: SearchQueryResult[],
+  language: PromptLanguage = 'en'
+): Promise<Competitor[]>;
+
+// Community signals - outputs title, snippet, themes in target language
+export async function synthesizeCommunitySignals(
+  searchResults: SearchQueryResult[],
+  language: PromptLanguage = 'en'
+): Promise<CommunitySignal[]>;
+
+// Regulatory signals - outputs summary, requirements, penalties in target language
+export async function synthesizeRegulatorySignals(
+  searchResults: SearchQueryResult[],
+  language: PromptLanguage = 'en'
+): Promise<RegulatorySignal[]>;
+```
+
+#### Research Engine Integration
+
+The `conductResearch` function in `/src/lib/search/research-engine.ts` accepts and passes language to synthesis functions:
+
+```typescript
+export async function conductResearch(
+  structuredIdea: StructuredIdea,
+  type: 'competitor' | 'community' | 'regulatory',
+  reuseQueries?: string[],
+  language: PromptLanguage = 'en'
+): Promise<TypedResearchResult> {
+  // ... search execution ...
+
+  // Pass language to synthesis
+  competitors = await synthesizeCompetitors(competitorResults.queries, language);
+  communitySignals = await synthesizeCommunitySignals(communityResults.queries, language);
+  regulatorySignals = await synthesizeRegulatorySignals(regulatoryResults.queries, language);
+
+  // ...
+}
+```
+
+### API Route Language Passing
+
+API routes read language from cookie and pass to prompt functions:
+
+```typescript
+// /app/api/sessions/[sessionId]/analyze/route.ts
+import { getLanguage } from '@/i18n/get-language';
+
+export async function POST(request: Request) {
+  const language = getLanguage(); // Read from cookie
+
+  const report = await runMVTAAnalysis(
+    structuredIdea,
+    researchSnapshot,
+    language  // Pass to prompt function
+  );
+
+  // ... save report
+}
+```
+
+### Example Chinese Output
+
+When `language='zh'`, the MVTA analysis output will be in Chinese:
+
+```json
+{
+  "vulnerabilities": [
+    {
+      "vector": "市场与经济可行性",
+      "simulation": "竞争对手战争游戏",
+      "description": "推想科技和汇医慧影已在三甲医院市场建立了强大的品牌认知度...",
+      "score": 2,
+      "rationale": "根据社区信号分析，医院采购决策者更倾向于选择已有成功案例的供应商..."
+    }
+  ],
+  "recommendations": [
+    {
+      "risk_index": 0,
+      "action_type": "Customer Discovery",
+      "description": "在目标的基层医院进行10次深度访谈，验证他们对AI辅诊工具的接受度和付费意愿。"
+    }
+  ]
+}
+```
+
+---
+
 ## Related Documents
 
 - [S-00: Architecture Overview](./S-00-architecture.md)
 - [S-02: Testing Strategy](./S-02-testing-strategy.md) - LLM testing specifics
 - [S-03: Database Schema](./S-03-database-schema.md) - Stores LLM outputs
 - [S-05: Search & Research Integration](./S-05-search-research-integration.md) - Uses Prompt B
+- [S-06: Internationalization](./S-06-internationalization.md) - Language-aware prompts
 - [F-02: Idea Intake Form](../features/F-02-idea-intake-form.md) - Uses Prompt A
 - [F-04: MVTA Red Team Simulation](../features/F-04-mvta-red-team-simulation.md) - Uses Prompt C
 - [F-06: Interactive Q&A Session](../features/F-06-interactive-qa-session.md) - Uses Prompt D

@@ -921,6 +921,86 @@ describe('ArrayFieldInput', () => {
 
 ---
 
+## Internationalization (i18n)
+
+The intake form supports bilingual display (English/Chinese). Language is determined from user's session cookie.
+
+**See [S-06: Internationalization](../system/S-06-internationalization.md) for full specification.**
+
+### Localized Field Labels and Placeholders
+
+All form labels, placeholders, and helper text are loaded from translation files:
+
+| Field | English | Chinese |
+|-------|---------|---------|
+| high_concept label | "Describe your idea in one sentence" | "用一句话描述你的想法" |
+| value_proposition label | "What problem does this solve, and for whom?" | "解决什么问题？面向谁？" |
+| success_metric_18m label | "What does success look like in 18 months?" | "18个月后的成功是什么样子？" |
+| user_persona label | "Target User Persona" | "目标用户画像" |
+
+### Chinese Sample Data: AI Medical Imaging
+
+For Chinese users, the sample/example data uses an AI medical imaging startup scenario:
+
+```json
+{
+  "high_concept": "基于AI医疗影像分析的辅助诊断平台，帮助医生更快速、准确地识别早期病变",
+  "value_proposition": "医生每天需要查看大量医学影像，容易疲劳导致漏诊。我们帮助放射科医生和基层医疗机构在几秒内完成影像初筛，提高诊断效率和准确性。",
+  "success_metric_18m": "覆盖100家医院，辅助诊断准确率达到95%，日处理影像10万张",
+  "environment": {
+    "user_persona": "三甲医院放射科医生（30-50岁），每天需要阅读200+张影像，专业能力强但工作负担重",
+    "competitive_landscape": "竞争对手：推想科技、汇医慧影、深睿医疗。差异化：我们专注于基层医疗，价格更亲民，部署更灵活。",
+    "regulatory_context": "医疗器械三类注册证、NMPA审批、医疗AI相关法规"
+  },
+  "assumptions": {
+    "market": [
+      "基层医疗对AI辅助诊断有强烈需求",
+      "医院愿意为提高效率付费"
+    ],
+    "technical": [
+      "现有模型准确率可达到临床应用标准",
+      "可以实现快速部署和集成"
+    ],
+    "business_model": [
+      "SaaS订阅模式在医疗行业可行",
+      "客单价可达到5万/年/医院"
+    ]
+  },
+  "assets": {
+    "key_assets": [
+      "核心算法专利",
+      "三甲医院合作关系",
+      "医疗影像数据集"
+    ],
+    "brand_narrative": [
+      "专注于普惠医疗",
+      "技术团队来自顶尖医学院"
+    ]
+  }
+}
+```
+
+### Sample Data Loading Logic
+
+```typescript
+// src/i18n/constants.ts
+import { Language } from './get-language';
+
+export function getSampleIdea(language: Language) {
+  return SAMPLE_IDEAS[language];
+}
+
+// In IntakeWizard.tsx
+const { language } = useLanguage();
+const sampleIdea = getSampleIdea(language);
+
+const loadExample = () => {
+  form.reset(sampleIdea);
+};
+```
+
+---
+
 ## Notes
 
 ### Key Differences from v1.0

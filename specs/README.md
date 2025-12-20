@@ -85,7 +85,8 @@ specs/
 │   ├── S-02-testing-strategy.md        # Testing strategy & quality gates
 │   ├── S-03-database-schema.md         # Database schema & RLS policies
 │   ├── S-04-llm-integration.md         # AI Builders LLM integration & prompts
-│   └── S-05-search-research-integration.md # AI Builders Search & research engine
+│   ├── S-05-search-research-integration.md # AI Builders Search & research engine
+│   └── S-06-internationalization.md    # i18n (Chinese/English bilingual support)
 │
 ├── features/                           # Feature specifications
 │   ├── F-01-database-auth.md           # Database & Authentication
@@ -313,6 +314,17 @@ When adding new features post-MVP, copy the structure from any F-XX file or the 
 - LLM-powered result synthesis
 - Progress tracking for transparency
 
+### [S-06: Internationalization](./system/S-06-internationalization.md)
+
+**What**: Chinese/English bilingual support
+
+**Key Concepts**:
+- Language detection from parent project (URL parameter `?lang=zh`)
+- Cookie-based language persistence
+- Translation files (JSON)
+- Language-aware AI prompts
+- Chinese sample data (AI medical imaging scenario)
+
 ---
 
 ## Tech Stack
@@ -360,6 +372,7 @@ When adding new features post-MVP, copy the structure from any F-XX file or the 
 - [S-03: Database Schema](./system/S-03-database-schema.md)
 - [S-04: LLM Integration](./system/S-04-llm-integration.md)
 - [S-05: Search & Research Integration](./system/S-05-search-research-integration.md)
+- [S-06: Internationalization](./system/S-06-internationalization.md)
 
 ### All Features
 - [F-01: Database & Authentication](./features/F-01-database-auth.md)

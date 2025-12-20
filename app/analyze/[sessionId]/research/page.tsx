@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { isValidResearchType, getResearchTypeConfig } from '@/lib/constants/research';
+import { useTranslation } from '@/i18n';
 
 /**
  * Research Page (UPDATED for multi-type support)
@@ -24,6 +25,7 @@ export default function ResearchPage() {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
+  const { t } = useTranslation();
 
   const sessionId = params.sessionId as string;
   const type = searchParams.get('type');
@@ -90,7 +92,7 @@ export default function ResearchPage() {
       setResults(data);
 
       // Navigate directly to results page
-      router.push(`/analyze/${sessionId}/research-results?type=${type}`);
+      router.push(`/analyze/${sessionId}/research/${type}`);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -115,7 +117,7 @@ export default function ResearchPage() {
   if (isLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-text-secondary">Loading...</div>
+        <div className="text-text-secondary">{t('common.loading')}</div>
       </div>
     );
   }
@@ -126,15 +128,15 @@ export default function ResearchPage() {
       <div className="min-h-screen bg-bg-secondary py-12">
         <div className="max-w-reading mx-auto px-6">
           <div className="bg-bg-primary rounded-lg shadow-card p-8">
-            <h1 className="text-2xl font-bold text-text-primary mb-2">Invalid Research Type</h1>
+            <h1 className="text-2xl font-bold text-text-primary mb-2">{t('research.invalidType')}</h1>
             <p className="text-text-secondary mb-6">
-              Please select a valid research type from the research types page.
+              {t('research.invalidTypeMessage')}
             </p>
             <button
               onClick={() => router.push(`/analyze/${sessionId}/research-choice`)}
               className="px-6 py-3 bg-brand-primary text-white font-semibold rounded-lg hover:bg-brand-hover transition-colors"
             >
-              Back to Research Types
+              {t('research.backToResearchTypes')}
             </button>
           </div>
         </div>
@@ -142,15 +144,23 @@ export default function ResearchPage() {
     );
   }
 
+  // Get step 2 text based on research type
+  const getStep2Text = () => {
+    if (type === 'competitor') return t('research.researchStep2Competitor');
+    if (type === 'community') return t('research.researchStep2Community');
+    if (type === 'regulatory') return t('research.researchStep2Regulatory');
+    return '';
+  };
+
   return (
     <div className="min-h-screen bg-bg-secondary py-12">
       <div className="max-w-reading mx-auto px-6">
         <div className="bg-bg-primary rounded-lg shadow-card p-8">
           <h1 className="text-2xl font-bold text-text-primary mb-2">
-            {typeConfig?.icon} {typeConfig?.label}
+            {typeConfig?.icon} {t(`research.types.${type}.label`)}
           </h1>
           <p className="text-text-secondary mb-6">
-            {typeConfig?.description}
+            {t(`research.types.${type}.description`)}
           </p>
 
           {error && (
@@ -166,21 +176,19 @@ export default function ResearchPage() {
                 className="px-6 py-3 bg-brand-primary text-white font-semibold rounded-lg hover:bg-brand-hover transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isResearching}
               >
-                {isResearching ? 'Researching... (This may take 2-5 minutes)' : 'Start Research'}
+                {isResearching ? t('research.researching') : t('research.startResearch')}
               </button>
 
               {isResearching && (
                 <div className="p-4 bg-brand-light border border-brand-primary rounded-lg">
                   <p className="text-sm text-text-secondary">
-                    <strong className="text-text-primary">🔬 Research in progress:</strong>
+                    <strong className="text-text-primary">🔬 {t('research.researchInProgressTitle')}</strong>
                     <br />
-                    1. Generating targeted research queries...
+                    {t('research.researchStep1')}
                     <br />
-                    2. {type === 'competitor' && 'Searching for competitors and alternatives...'}
-                    {type === 'community' && 'Analyzing community discussions and reviews...'}
-                    {type === 'regulatory' && 'Checking regulatory and legal requirements...'}
+                    {getStep2Text()}
                     <br />
-                    3. Synthesizing findings with AI...
+                    {t('research.researchStep3')}
                   </p>
                 </div>
               )}
@@ -190,19 +198,19 @@ export default function ResearchPage() {
           {results && (
             <div className="space-y-4">
               <div className="p-4 bg-brand-light border border-brand-primary rounded-lg">
-                <h2 className="font-semibold text-text-primary mb-2">Research Complete! 🎉</h2>
+                <h2 className="font-semibold text-text-primary mb-2">{t('research.researchCompleteTitle')} 🎉</h2>
                 <ul className="text-sm text-text-secondary space-y-1">
-                  <li>✅ {typeConfig?.label}: Found {results.results_count} results</li>
-                  <li>✅ Generated {results.queries.length} research queries</li>
-                  <li>✅ Analysis data ready for MVTA</li>
+                  <li>✅ {t(`research.types.${type}.label`)}: {t('research.foundResults', { count: results.results_count })}</li>
+                  <li>✅ {t('research.generatedQueries', { count: results.queries.length })}</li>
+                  <li>✅ {t('research.analysisDataReady')}</li>
                 </ul>
               </div>
 
               <button
-                onClick={() => router.push(`/analyze/${sessionId}/research-results?type=${type}`)}
+                onClick={() => router.push(`/analyze/${sessionId}/research/${type}`)}
                 className="px-6 py-3 bg-brand-primary text-white font-semibold rounded-lg hover:bg-brand-hover transition-colors shadow-sm"
               >
-                View Results
+                {t('research.viewResults')}
               </button>
             </div>
           )}
@@ -210,9 +218,7 @@ export default function ResearchPage() {
 
         <div className="mt-6 p-4 bg-brand-light border border-brand-primary rounded-lg">
           <p className="text-sm text-text-secondary">
-            <strong className="text-text-primary">💡 MVP Note:</strong> This is a simplified
-            version. Full version will show real-time progress updates and display detailed
-            research cards as results arrive.
+            <strong className="text-text-primary">💡 {t('research.mvpNoteTitle')}</strong> {t('research.mvpNoteContent')}
           </p>
         </div>
       </div>

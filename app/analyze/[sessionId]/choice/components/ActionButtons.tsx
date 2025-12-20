@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useTranslation } from '@/i18n';
 
 interface SessionStatus {
   id: string;
@@ -29,12 +29,14 @@ export default function ActionButtons({
   onStartAnalysis,
   onViewReport,
 }: ActionButtonsProps) {
+  const { t } = useTranslation();
+
   // Research button: always "Online Research", always enabled
   // Badge shows completion status (multi-type support)
   const researchConfig = {
-    label: 'Start Research',
+    label: t('choice.startResearch'),
     variant: 'secondary' as const,
-    badge: session.research_completed ? 'Completed' : 'Not Started',
+    badge: session.research_completed ? t('choice.completed') : t('choice.notStarted'),
     badgeColor: session.research_completed
       ? 'bg-green-100 text-green-800'
       : 'bg-gray-100 text-gray-800',
@@ -43,8 +45,8 @@ export default function ActionButtons({
 
   // Analysis button label changes based on completion state
   const analysisCompleted = session.analysis_completed;
-  const analysisButtonLabel = analysisCompleted ? 'Review Report' : 'Start Analysis';
-  const analysisBadge = analysisCompleted ? 'Completed' : 'Not Started';
+  const analysisButtonLabel = analysisCompleted ? t('choice.reviewReport') : t('choice.startMvta');
+  const analysisBadge = analysisCompleted ? t('choice.completed') : t('choice.notStarted');
   const analysisBadgeColor = analysisCompleted
     ? 'bg-green-100 text-green-800'
     : 'bg-gray-100 text-gray-800';
@@ -91,7 +93,7 @@ export default function ActionButtons({
           </div>
           <div className="flex-1">
             <h3 className="text-xl font-bold text-text-primary mb-2">
-              Red Team Analysis
+              {t('choice.mvtaTitle')}
             </h3>
             <span
               className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${analysisBadgeColor}`}
@@ -102,9 +104,7 @@ export default function ActionButtons({
         </div>
 
         <p className="text-text-secondary mb-6">
-          Using the MVTA method, simulate adversarial attacks on your idea across 5
-          threat vectors. Get 15-25 vulnerabilities with severity scores and
-          actionable recommendations.
+          {t('choice.mvtaDesc')}
         </p>
 
         {/* Main Action Button */}
@@ -118,8 +118,8 @@ export default function ActionButtons({
 
         <p className="mt-3 text-sm text-text-secondary">
           {highlightAnalysis
-            ? '✨ Recommended: Run analysis with your research insights'
-            : 'Core feature: Identify vulnerabilities before building'}
+            ? t('choice.recommendedHint')
+            : t('choice.coreFeatureHint')}
         </p>
         </div>
       </div>
@@ -146,7 +146,7 @@ export default function ActionButtons({
           </div>
           <div className="flex-1">
             <h3 className="text-xl font-bold text-text-primary mb-2">
-              Online Research
+              {t('choice.researchTitle')}
             </h3>
             <span
               className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${researchConfig.badgeColor}`}
@@ -157,8 +157,7 @@ export default function ActionButtons({
         </div>
 
         <p className="text-text-secondary mb-6">
-          Choose from competitor analysis, community voice research, or regulatory
-          compliance. Run one or all three types independently.
+          {t('choice.researchDesc')}
         </p>
 
         <div className="mt-auto">
@@ -171,8 +170,8 @@ export default function ActionButtons({
 
         <p className="mt-3 text-sm text-text-secondary">
           {session.research_completed
-            ? 'View or run additional research types'
-            : 'Optional: Research can be done before or after MVTA'}
+            ? t('choice.viewMoreResearch')
+            : t('choice.optionalResearchHint')}
         </p>
         </div>
       </div>

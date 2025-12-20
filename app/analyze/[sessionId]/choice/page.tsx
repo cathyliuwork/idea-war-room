@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { StructuredIdea } from '@/lib/validation/schemas';
 import IdeaSummary from './components/IdeaSummary';
 import ActionButtons from './components/ActionButtons';
+import { useTranslation } from '@/i18n';
 
 /**
  * Choice Page (F-03: Idea Analysis Choice Page)
@@ -26,6 +27,7 @@ export default function ChoicePage() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
   const params = useParams();
+  const { t } = useTranslation();
   const sessionId = params.sessionId as string;
 
   const [session, setSession] = useState<SessionStatus | null>(null);
@@ -95,7 +97,7 @@ export default function ChoicePage() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-primary mx-auto mb-4"></div>
-          <p className="text-text-secondary">Loading...</p>
+          <p className="text-text-secondary">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -106,13 +108,13 @@ export default function ChoicePage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center max-w-md">
-          <h2 className="text-2xl font-bold text-text-primary mb-4">Error</h2>
-          <p className="text-text-secondary mb-6">{error || 'Failed to load data'}</p>
+          <h2 className="text-2xl font-bold text-text-primary mb-4">{t('common.error')}</h2>
+          <p className="text-text-secondary mb-6">{error || t('errors.networkError')}</p>
           <button
             onClick={() => router.push('/')}
             className="px-6 py-3 bg-brand-primary text-white rounded-lg hover:bg-brand-hover transition-colors"
           >
-            Back to Home
+            {t('common.backToHome')}
           </button>
         </div>
       </div>
@@ -126,17 +128,17 @@ export default function ChoicePage() {
         <div className="mb-8 flex items-start justify-between">
           <div>
             <h1 className="text-3xl font-bold text-text-primary mb-2">
-              Choose Your Next Step
+              {t('choice.title')}
             </h1>
             <p className="text-text-secondary">
-              Your idea has been saved. Select how you&apos;d like to proceed.
+              {t('choice.subtitle')}
             </p>
           </div>
           <button
             onClick={() => router.push('/dashboard')}
             className="px-6 py-3 border border-border-medium text-text-primary rounded-lg hover:border-border-dark transition-colors flex-shrink-0"
           >
-            Back to Dashboard
+            {t('common.backToDashboard')}
           </button>
         </div>
 

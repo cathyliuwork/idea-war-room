@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAuthenticatedSupabaseClient } from '@/lib/auth/middleware';
 import { verifySessionOwnership } from '@/lib/auth/session-ownership';
 import { runMVTAAnalysis } from '@/lib/llm/prompts/mvta-analysis';
+import { getLanguage } from '@/i18n/get-language';
+import { getValidPromptLanguage } from '@/lib/llm/prompts/language-instructions';
 
 /**
  * MVTA Analysis API Endpoint
@@ -47,9 +49,12 @@ export async function POST(
       );
     }
 
-    // 2. Run MVTA analysis (completely independent - no research data)
-    console.log(`Starting MVTA analysis for session ${params.sessionId}...`);
-    const mvtaReport = await runMVTAAnalysis(idea.structured_idea);
+    // 2. Get language from cookie
+    const language = getValidPromptLanguage(getLanguage());
+
+    // 3. Run MVTA analysis (completely independent - no research data)
+    console.log(`Starting MVTA analysis for session ${params.sessionId} in ${language}...`);
+    const mvtaReport = await runMVTAAnalysis(idea.structured_idea, undefined, language);
 
     // 3. Save damage report to database
     const { data: damageReport, error: reportError } = await supabase

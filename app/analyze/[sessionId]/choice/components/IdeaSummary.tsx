@@ -1,6 +1,7 @@
 'use client';
 
 import { StructuredIdea } from '@/lib/validation/schemas';
+import { useTranslation } from '@/i18n';
 
 interface IdeaSummaryProps {
   idea: StructuredIdea;
@@ -20,29 +21,31 @@ export default function IdeaSummary({
   isExpanded,
   onToggleExpand,
 }: IdeaSummaryProps) {
+  const { t } = useTranslation();
+
   return (
     <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-8">
-      <h2 className="text-2xl font-bold text-text-primary mb-4">Your Idea</h2>
+      <h2 className="text-2xl font-bold text-text-primary mb-4">{t('choice.yourIdea')}</h2>
 
       {/* Step 1 Fields (Always Visible) */}
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-semibold text-text-secondary mb-1">
-            High Concept
+            {t('choice.highConcept')}
           </label>
           <p className="text-text-primary">{idea.high_concept}</p>
         </div>
 
         <div>
           <label className="block text-sm font-semibold text-text-secondary mb-1">
-            Value Proposition
+            {t('choice.valueProposition')}
           </label>
           <p className="text-text-primary">{idea.value_proposition}</p>
         </div>
 
         <div>
           <label className="block text-sm font-semibold text-text-secondary mb-1">
-            Success Metric (18 months)
+            {t('choice.successMetric18m')}
           </label>
           <p className="text-text-primary">{idea.success_metric_18m}</p>
         </div>
@@ -54,19 +57,19 @@ export default function IdeaSummary({
           {/* Step 2: Environment */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-text-primary">
-              Business Context
+              {t('choice.businessContext')}
             </h3>
 
             <div>
               <label className="block text-sm font-semibold text-text-secondary mb-1">
-                User Persona
+                {t('choice.userPersona')}
               </label>
               <p className="text-text-primary">{idea.environment.user_persona}</p>
             </div>
 
             <div>
               <label className="block text-sm font-semibold text-text-secondary mb-1">
-                Competitive Landscape
+                {t('choice.competitiveLandscape')}
               </label>
               <p className="text-text-primary">
                 {idea.environment.competitive_landscape}
@@ -76,7 +79,7 @@ export default function IdeaSummary({
             {idea.environment.regulatory_context && (
               <div>
                 <label className="block text-sm font-semibold text-text-secondary mb-1">
-                  Regulatory Context
+                  {t('choice.regulatoryContext')}
                 </label>
                 <p className="text-text-primary">
                   {idea.environment.regulatory_context}
@@ -91,13 +94,13 @@ export default function IdeaSummary({
             idea.assumptions.business_model.length > 0) && (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-text-primary">
-                Assumptions
+                {t('choice.assumptions')}
               </h3>
 
               {idea.assumptions.market.length > 0 && (
                 <div>
                   <label className="block text-sm font-semibold text-text-secondary mb-1">
-                    Market Assumptions
+                    {t('choice.marketAssumptions')}
                   </label>
                   <ul className="list-disc list-inside space-y-1">
                     {idea.assumptions.market.map((item, idx) => (
@@ -112,7 +115,7 @@ export default function IdeaSummary({
               {idea.assumptions.technical.length > 0 && (
                 <div>
                   <label className="block text-sm font-semibold text-text-secondary mb-1">
-                    Technical Assumptions
+                    {t('choice.technicalAssumptions')}
                   </label>
                   <ul className="list-disc list-inside space-y-1">
                     {idea.assumptions.technical.map((item, idx) => (
@@ -127,7 +130,7 @@ export default function IdeaSummary({
               {idea.assumptions.business_model.length > 0 && (
                 <div>
                   <label className="block text-sm font-semibold text-text-secondary mb-1">
-                    Business Model Assumptions
+                    {t('choice.businessModelAssumptions')}
                   </label>
                   <ul className="list-disc list-inside space-y-1">
                     {idea.assumptions.business_model.map((item, idx) => (
@@ -146,13 +149,13 @@ export default function IdeaSummary({
             idea.assets?.brand_narrative.length > 0) && (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-text-primary">
-                Assets & Advantages
+                {t('choice.assetsAdvantages')}
               </h3>
 
               {idea.assets.key_assets.length > 0 && (
                 <div>
                   <label className="block text-sm font-semibold text-text-secondary mb-1">
-                    Key Assets
+                    {t('choice.keyAssets')}
                   </label>
                   <ul className="list-disc list-inside space-y-1">
                     {idea.assets.key_assets.map((item, idx) => (
@@ -167,7 +170,7 @@ export default function IdeaSummary({
               {idea.assets.brand_narrative.length > 0 && (
                 <div>
                   <label className="block text-sm font-semibold text-text-secondary mb-1">
-                    Brand Narrative Strengths
+                    {t('choice.brandNarrativeStrengths')}
                   </label>
                   <ul className="list-disc list-inside space-y-1">
                     {idea.assets.brand_narrative.map((item, idx) => (
@@ -203,7 +206,7 @@ export default function IdeaSummary({
             d="M19 9l-7 7-7-7"
           />
         </svg>
-        {isExpanded ? 'Show Less' : 'Show Full Details'}
+        {isExpanded ? t('choice.showLess') : t('choice.showFullDetails')}
       </button>
     </div>
   );

@@ -3,6 +3,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import { useTranslation } from '@/i18n';
 
 /**
  * Analysis Page (MVTA Red Team Simulation)
@@ -21,6 +22,7 @@ export default function AnalysisPage() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
   const params = useParams();
+  const { t } = useTranslation();
   const sessionId = params.sessionId as string;
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -62,7 +64,7 @@ export default function AnalysisPage() {
   if (isLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-text-secondary">Loading...</div>
+        <div className="text-text-secondary">{t('common.loading')}</div>
       </div>
     );
   }
@@ -72,11 +74,10 @@ export default function AnalysisPage() {
       <div className="max-w-reading mx-auto px-6">
         <div className="bg-bg-primary rounded-lg shadow-card p-8">
           <h1 className="text-2xl font-bold text-text-primary mb-2">
-            Red Team - Multi-Vector Threat Analysis (MVTA)
+            {t('analysis.title')} - MVTA
           </h1>
           <p className="text-text-secondary mb-6">
-            Our AI red team will now attack your idea from 5 adversarial perspectives across
-            all threat vectors. This takes 2-3 minutes.
+            {t('analysis.analyzingIdea')}
           </p>
 
           {error && (
@@ -92,23 +93,23 @@ export default function AnalysisPage() {
                 className="px-6 py-3 bg-brand-primary text-white font-semibold rounded-lg hover:bg-brand-hover transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isAnalyzing}
               >
-                {isAnalyzing ? 'Red Team is attacking... (2-3 min)' : 'Start Analysis'}
+                {isAnalyzing ? t('analysis.attackingInProgress') : t('analysis.startAnalysis')}
               </button>
 
               {isAnalyzing && (
                 <div className="p-4 bg-brand-light border border-brand-primary rounded-lg">
                   <p className="text-sm text-text-secondary">
-                    <strong className="text-text-primary">🎯 MVTA Analysis in progress:</strong>
+                    <strong className="text-text-primary">🎯 {t('analysis.mvtaInProgressTitle')}</strong>
                     <br />
-                    1. Technical Penetration Tester - attacking product integrity...
+                    {t('analysis.mvtaStep1')}
                     <br />
-                    2. Competitor CEO - probing market vulnerabilities...
+                    {t('analysis.mvtaStep2')}
                     <br />
-                    3. Social Critic - examining ethical implications...
+                    {t('analysis.mvtaStep3')}
                     <br />
-                    4. Regulatory Officer - checking compliance gaps...
+                    {t('analysis.mvtaStep4')}
                     <br />
-                    5. Political Strategist - testing narrative weaponization...
+                    {t('analysis.mvtaStep5')}
                   </p>
                 </div>
               )}
@@ -119,12 +120,12 @@ export default function AnalysisPage() {
             <div className="space-y-4">
               <div className="p-4 bg-brand-light border border-brand-primary rounded-lg">
                 <h2 className="font-semibold text-text-primary mb-2">
-                  Analysis Complete! 🎯
+                  {t('analysis.analysisCompleteTitle')} 🎯
                 </h2>
                 <ul className="text-sm text-text-secondary space-y-1">
-                  <li>✅ Found {results.vulnerabilities_count} vulnerabilities</li>
-                  <li>✅ Identified {results.cascading_failures_count} cascading failures</li>
-                  <li>✅ Damage report ready for review</li>
+                  <li>✅ {t('analysis.foundVulnerabilities').replace('{count}', String(results.vulnerabilities_count))}</li>
+                  <li>✅ {t('analysis.identifiedCascadingFailures').replace('{count}', String(results.cascading_failures_count))}</li>
+                  <li>✅ {t('analysis.damageReportReady')}</li>
                 </ul>
               </div>
 
@@ -132,7 +133,7 @@ export default function AnalysisPage() {
                 onClick={() => router.push(`/analyze/${sessionId}/report`)}
                 className="px-6 py-3 bg-brand-primary text-white font-semibold rounded-lg hover:bg-brand-hover transition-colors shadow-sm"
               >
-                View Damage Report
+                {t('analysis.viewDamageReport')}
               </button>
             </div>
           )}
@@ -140,9 +141,7 @@ export default function AnalysisPage() {
 
         <div className="mt-6 p-4 bg-brand-light border border-brand-primary rounded-lg">
           <p className="text-sm text-text-secondary">
-            <strong className="text-text-primary">💡 MVP Note:</strong> This is a simplified
-            loading screen. Full version will show real-time attack simulation progress with
-            animated visuals.
+            <strong className="text-text-primary">💡 {t('analysis.mvpNoteTitle')}</strong> {t('analysis.mvpNoteContent')}
           </p>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { callLLMWithRetry } from '../client';
 import { z } from 'zod';
 import { SEARCH_RESULTS_PER_QUERY } from '@/lib/constants/research';
+import { getLanguageInstruction, PromptLanguage } from './language-instructions';
 
 // Import from search client
 interface SearchResult {
@@ -24,6 +25,9 @@ interface SearchQueryResult {
  *
  * Convert raw search results into structured profiles for MVTA analysis.
  * Three functions: competitors, community signals, regulatory signals.
+ *
+ * Language support: All synthesis functions accept a language parameter
+ * to output results in the user's preferred language.
  */
 
 // ============================================================================
@@ -78,14 +82,19 @@ Rules:
  * Synthesize competitor profiles from search results
  *
  * @param searchResults - Raw search results from competitor queries
+ * @param language - Output language (default: 'en')
  * @returns Array of competitor profiles
  */
 export async function synthesizeCompetitors(
-  searchResults: SearchQueryResult[]
+  searchResults: SearchQueryResult[],
+  language: PromptLanguage = 'en'
 ): Promise<Competitor[]> {
   if (searchResults.length === 0) {
     return [];
   }
+
+  // Add language instructions to system prompt
+  const systemPromptWithLang = COMPETITOR_SYSTEM_PROMPT + getLanguageInstruction(language);
 
   // Aggregate all search results into context
   const context = searchResults
@@ -102,7 +111,7 @@ export async function synthesizeCompetitors(
 
   const response = await callLLMWithRetry({
     messages: [
-      { role: 'system', content: COMPETITOR_SYSTEM_PROMPT },
+      { role: 'system', content: systemPromptWithLang },
       { role: 'user', content: userPrompt },
     ],
     model: 'gemini-2.5-pro',
@@ -207,14 +216,19 @@ Rules:
  * Synthesize community signals from search results
  *
  * @param searchResults - Raw search results from community queries
+ * @param language - Output language (default: 'en')
  * @returns Array of community signals
  */
 export async function synthesizeCommunitySignals(
-  searchResults: SearchQueryResult[]
+  searchResults: SearchQueryResult[],
+  language: PromptLanguage = 'en'
 ): Promise<CommunitySignal[]> {
   if (searchResults.length === 0) {
     return [];
   }
+
+  // Add language instructions to system prompt
+  const systemPromptWithLang = COMMUNITY_SYSTEM_PROMPT + getLanguageInstruction(language);
 
   const context = searchResults
     .map((result) => {
@@ -230,7 +244,7 @@ export async function synthesizeCommunitySignals(
 
   const response = await callLLMWithRetry({
     messages: [
-      { role: 'system', content: COMMUNITY_SYSTEM_PROMPT },
+      { role: 'system', content: systemPromptWithLang },
       { role: 'user', content: userPrompt },
     ],
     model: 'gemini-2.5-pro',
@@ -332,14 +346,19 @@ Rules:
  * Synthesize regulatory signals from search results
  *
  * @param searchResults - Raw search results from regulatory queries
+ * @param language - Output language (default: 'en')
  * @returns Array of regulatory signals
  */
 export async function synthesizeRegulatorySignals(
-  searchResults: SearchQueryResult[]
+  searchResults: SearchQueryResult[],
+  language: PromptLanguage = 'en'
 ): Promise<RegulatorySignal[]> {
   if (searchResults.length === 0) {
     return [];
   }
+
+  // Add language instructions to system prompt
+  const systemPromptWithLang = REGULATORY_SYSTEM_PROMPT + getLanguageInstruction(language);
 
   const context = searchResults
     .map((result) => {
@@ -355,7 +374,7 @@ export async function synthesizeRegulatorySignals(
 
   const response = await callLLMWithRetry({
     messages: [
-      { role: 'system', content: REGULATORY_SYSTEM_PROMPT },
+      { role: 'system', content: systemPromptWithLang },
       { role: 'user', content: userPrompt },
     ],
     model: 'gemini-2.5-pro',

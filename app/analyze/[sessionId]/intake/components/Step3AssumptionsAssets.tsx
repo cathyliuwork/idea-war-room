@@ -3,12 +3,14 @@
 import { UseFormReturn } from 'react-hook-form';
 import { StructuredIdea } from '@/lib/validation/schemas';
 import ArrayFieldInput from './ArrayFieldInput';
+import { useTranslation } from '@/i18n';
 
 interface Step3AssumptionsAssetsProps {
   form: UseFormReturn<StructuredIdea>;
 }
 
 export default function Step3AssumptionsAssets({ form }: Step3AssumptionsAssetsProps) {
+  const { t } = useTranslation();
   const {
     watch,
     setValue,
@@ -25,80 +27,90 @@ export default function Step3AssumptionsAssets({ form }: Step3AssumptionsAssetsP
     <div className="space-y-8">
       <div>
         <h2 className="text-2xl font-bold text-text-primary mb-2">
-          Strategic Inputs
+          {t('intake.step3Title')}
         </h2>
         <p className="text-text-secondary">
-          Key assumptions and strengths that shape your strategy. Skip any that don&apos;t apply.
+          {t('intake.step3Desc')}
         </p>
       </div>
 
       {/* Assumptions Section */}
       <div className="space-y-6">
         <h3 className="text-lg font-semibold text-text-primary border-b border-border-medium pb-2">
-          Assumptions
+          {t('intake.assumptionsTitle')}
         </h3>
 
         <ArrayFieldInput
-          label="Market Assumptions"
-          helperText="What are your key assumptions about the target market?"
+          label={t('intake.marketAssumptionsLabel')}
+          helperText={t('intake.marketAssumptionsHelper')}
           maxLength={200}
-          placeholder="e.g., Solo founders spend 2 hours/day gathering feedback"
+          placeholder={t('intake.marketAssumptionsPlaceholder')}
           values={marketAssumptions}
           onChange={(values) => setValue('assumptions.market', values, { shouldValidate: true })}
           error={errors.assumptions?.market?.message}
+          addButtonLabel={t('intake.addAnother')}
+          noItemsText={t('intake.noItemsYet')}
         />
 
         <ArrayFieldInput
-          label="Technical Assumptions"
-          helperText="What technical capabilities or feasibility are you assuming?"
+          label={t('intake.technicalAssumptionsLabel')}
+          helperText={t('intake.technicalAssumptionsHelper')}
           maxLength={200}
-          placeholder="e.g., LLMs can accurately analyze startup ideas"
+          placeholder={t('intake.technicalAssumptionsPlaceholder')}
           values={technicalAssumptions}
           onChange={(values) => setValue('assumptions.technical', values, { shouldValidate: true })}
           error={errors.assumptions?.technical?.message}
+          addButtonLabel={t('intake.addAnother')}
+          noItemsText={t('intake.noItemsYet')}
         />
 
         <ArrayFieldInput
-          label="Business Model Assumptions"
-          helperText="Assumptions about pricing, distribution, or revenue?"
+          label={t('intake.businessModelAssumptionsLabel')}
+          helperText={t('intake.businessModelAssumptionsHelper')}
           maxLength={200}
-          placeholder="e.g., Users will pay $20/month for validation tools"
+          placeholder={t('intake.businessModelAssumptionsPlaceholder')}
           values={businessModelAssumptions}
           onChange={(values) => setValue('assumptions.business_model', values, { shouldValidate: true })}
           error={errors.assumptions?.business_model?.message}
+          addButtonLabel={t('intake.addAnother')}
+          noItemsText={t('intake.noItemsYet')}
         />
       </div>
 
       {/* Assets Section */}
       <div className="space-y-6">
         <h3 className="text-lg font-semibold text-text-primary border-b border-border-medium pb-2">
-          Assets & Advantages
+          {t('intake.assetsTitle')}
         </h3>
 
         <ArrayFieldInput
-          label="Key Assets & Resources"
-          helperText="What unique advantages do you have? (Skills, IP, distribution channels, partnerships)"
+          label={t('intake.keyAssetsLabel')}
+          helperText={t('intake.keyAssetsHelper')}
           maxLength={150}
-          placeholder="e.g., 10 years of experience in AI/ML"
+          placeholder={t('intake.keyAssetsPlaceholder')}
           values={keyAssets}
           onChange={(values) => setValue('assets.key_assets', values, { shouldValidate: true })}
           error={errors.assets?.key_assets?.message}
+          addButtonLabel={t('intake.addAnother')}
+          noItemsText={t('intake.noItemsYet')}
         />
 
         <ArrayFieldInput
-          label="Brand Narrative Strengths"
-          helperText="What compelling stories or brand elements do you have?"
+          label={t('intake.brandNarrativeLabel')}
+          helperText={t('intake.brandNarrativeHelper')}
           maxLength={150}
-          placeholder="e.g., Founded by Y Combinator alumni"
+          placeholder={t('intake.brandNarrativePlaceholder')}
           values={brandNarrative}
           onChange={(values) => setValue('assets.brand_narrative', values, { shouldValidate: true })}
           error={errors.assets?.brand_narrative?.message}
+          addButtonLabel={t('intake.addAnother')}
+          noItemsText={t('intake.noItemsYet')}
         />
       </div>
 
       <div className="bg-brand-light border border-brand-primary rounded-lg p-4">
         <p className="text-sm text-text-secondary">
-          <strong className="text-text-primary">💡 Tip:</strong> While these fields are optional, providing more detail helps our AI generate a more thorough adversarial analysis.
+          <strong className="text-text-primary">{t('intake.tipTitle')}</strong> {t('intake.tipContent')}
         </p>
       </div>
     </div>

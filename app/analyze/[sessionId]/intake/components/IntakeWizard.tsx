@@ -10,6 +10,7 @@ import FormNavigation from './FormNavigation';
 import Step1CoreConcept from './Step1CoreConcept';
 import Step2Environment from './Step2Environment';
 import Step3AssumptionsAssets from './Step3AssumptionsAssets';
+import { useTranslation, getSampleIdea, getSampleIdeaName } from '@/i18n';
 
 interface IntakeWizardProps {
   sessionId: string;
@@ -17,6 +18,7 @@ interface IntakeWizardProps {
 
 export default function IntakeWizard({ sessionId }: IntakeWizardProps) {
   const router = useRouter();
+  const { t, language } = useTranslation();
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isMockMode = process.env.NEXT_PUBLIC_AUTH_MODE === 'mock';
@@ -372,45 +374,42 @@ export default function IntakeWizard({ sessionId }: IntakeWizardProps) {
       {/* Example buttons - compact row */}
       {isMockMode ? (
         <div className="flex items-center gap-2 mb-4 text-sm">
-          <span className="text-text-tertiary">Quick examples:</span>
+          <span className="text-text-tertiary">{t('intake.quickExamples')}</span>
           <button
             type="button"
-            onClick={loadExample1}
+            onClick={() => form.reset(getSampleIdea(language))}
             className="px-3 py-1 border border-border-medium text-text-secondary rounded hover:bg-bg-secondary hover:border-brand-primary transition-colors"
           >
-            Idea Validator
+            {getSampleIdeaName(language)}
           </button>
-          <button
-            type="button"
-            onClick={loadExample2}
-            className="px-3 py-1 border border-border-medium text-text-secondary rounded hover:bg-bg-secondary hover:border-brand-primary transition-colors"
-          >
-            Sales Analyzer
-          </button>
-          <button
-            type="button"
-            onClick={loadExample3}
-            className="px-3 py-1 border border-border-medium text-text-secondary rounded hover:bg-bg-secondary hover:border-brand-primary transition-colors"
-          >
-            代码审查AI
-          </button>
-          <button
-            type="button"
-            onClick={loadExample4}
-            className="px-3 py-1 border border-border-medium text-text-secondary rounded hover:bg-bg-secondary hover:border-brand-primary transition-colors"
-          >
-            医疗影像AI
-          </button>
+          {language === 'en' && (
+            <button
+              type="button"
+              onClick={loadExample2}
+              className="px-3 py-1 border border-border-medium text-text-secondary rounded hover:bg-bg-secondary hover:border-brand-primary transition-colors"
+            >
+              Sales Analyzer
+            </button>
+          )}
+          {language === 'zh' && (
+            <button
+              type="button"
+              onClick={loadExample3}
+              className="px-3 py-1 border border-border-medium text-text-secondary rounded hover:bg-bg-secondary hover:border-brand-primary transition-colors"
+            >
+              代码审查AI
+            </button>
+          )}
         </div>
       ) : (
         <div className="flex items-center gap-2 mb-4 text-sm">
-          <span className="text-brand-primary">No idea yet? Explore with a sample idea:</span>
+          <span className="text-brand-primary">{t('intake.noIdeaYet')}</span>
           <button
             type="button"
-            onClick={loadExample2}
+            onClick={() => form.reset(getSampleIdea(language))}
             className="px-3 py-1.5 bg-border-light text-brand-primary rounded hover:bg-brand-light transition-colors"
           >
-            AI Sales Analyzer
+            {getSampleIdeaName(language)}
           </button>
         </div>
       )}
@@ -433,7 +432,7 @@ export default function IntakeWizard({ sessionId }: IntakeWizardProps) {
 
       {/* Auto-save indicator */}
       <div className="mt-4 text-center text-xs text-text-tertiary">
-        Your progress is automatically saved
+        {t('intake.autoSaveMessage')}
       </div>
     </div>
   );

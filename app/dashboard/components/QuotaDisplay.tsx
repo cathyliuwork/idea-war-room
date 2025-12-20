@@ -1,6 +1,7 @@
 'use client';
 
 import { SessionQuota } from '@/types/quota';
+import { useTranslation } from '@/i18n';
 
 interface QuotaDisplayProps {
   quota: SessionQuota;
@@ -18,16 +19,16 @@ export default function QuotaDisplay({
   quota,
   variant = 'full',
 }: QuotaDisplayProps) {
+  const { t } = useTranslation();
   const { used, limit, remaining, isLimitReached } = quota;
 
   // Unlimited users
   if (limit === null) {
     return (
       <div className="text-sm text-text-secondary">
-        <span className="font-medium text-text-primary">{used}</span> sessions
-        created
+        <span className="font-medium text-text-primary">{used}</span> {t('quota.sessionsCreated')}
         <span className="ml-2 text-xs px-2 py-0.5 bg-green-100 text-green-800 rounded-full">
-          Unlimited
+          {t('quota.unlimited')}
         </span>
       </div>
     );
@@ -41,7 +42,7 @@ export default function QuotaDisplay({
       <span
         className={`text-sm ${isLimitReached ? 'text-severity-1-catastrophic' : 'text-text-secondary'}`}
       >
-        {used}/{limit} sessions
+        {used}/{limit}
       </span>
     );
   }
@@ -51,7 +52,7 @@ export default function QuotaDisplay({
       {/* Label */}
       <div className="flex justify-between items-center">
         <span className="text-xs text-text-secondary uppercase tracking-wide">
-          Session Usage
+          {t('quota.sessionUsage')}
         </span>
         <span
           className={`text-sm font-medium ${
@@ -62,7 +63,7 @@ export default function QuotaDisplay({
                 : 'text-text-primary'
           }`}
         >
-          {used} of {limit}
+          {used} / {limit}
         </span>
       </div>
 
@@ -83,7 +84,7 @@ export default function QuotaDisplay({
       {/* Warning message */}
       {isLimitReached && (
         <p className="text-xs text-severity-1-catastrophic">
-          Limit reached
+          {t('quota.limitReached')}
         </p>
       )}
     </div>

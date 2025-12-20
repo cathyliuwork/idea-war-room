@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { RESEARCH_TYPE_CONFIGS, ResearchType } from '@/lib/constants/research';
 import ResearchTypeCard from './components/ResearchTypeCard';
+import { useTranslation, translations } from '@/i18n';
 
 /**
  * Research Type Selection Page (F-08: Research Engine)
@@ -24,6 +25,7 @@ export default function ResearchChoicePage() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
   const params = useParams();
+  const { t, language } = useTranslation();
   const sessionId = params.sessionId as string;
 
   const [researchStatus, setResearchStatus] = useState<ResearchStatus>({});
@@ -82,7 +84,7 @@ export default function ResearchChoicePage() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-primary mx-auto mb-4"></div>
-          <p className="text-text-secondary">Loading...</p>
+          <p className="text-text-secondary">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -93,13 +95,13 @@ export default function ResearchChoicePage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center max-w-md">
-          <h2 className="text-2xl font-bold text-text-primary mb-4">Error</h2>
+          <h2 className="text-2xl font-bold text-text-primary mb-4">{t('common.error')}</h2>
           <p className="text-text-secondary mb-6">{error}</p>
           <button
             onClick={() => router.push(`/analyze/${sessionId}/choice`)}
             className="px-6 py-3 bg-brand-primary text-white rounded-lg hover:bg-brand-hover transition-colors"
           >
-            Back to Choice Page
+            {t('research.backToIdea')}
           </button>
         </div>
       </div>
@@ -119,18 +121,17 @@ export default function ResearchChoicePage() {
           <div className="flex items-start justify-between mb-4">
             <div>
               <h1 className="text-3xl font-bold text-text-primary mb-2">
-                Online Research
+                {t('research.title')}
               </h1>
               <p className="text-text-secondary">
-                Select the type of research you want to conduct for your idea.
-                You can run multiple types independently.
+                {t('research.subtitle')}
               </p>
             </div>
             <button
               onClick={() => router.push(`/analyze/${sessionId}/choice`)}
               className="px-6 py-3 border border-border-medium text-text-primary rounded-lg hover:border-border-dark transition-colors flex-shrink-0"
             >
-              Back to Idea Page
+              {t('research.backToIdea')}
             </button>
           </div>
 
@@ -138,10 +139,7 @@ export default function ResearchChoicePage() {
           {completedCount > 0 && (
             <div className="bg-surface-elevated border border-border-light rounded-lg px-4 py-3">
               <p className="text-sm text-text-secondary">
-                <span className="font-semibold text-brand-primary">
-                  {completedCount}
-                </span>{' '}
-                of {RESEARCH_TYPE_CONFIGS.length} research types completed
+                {t('research.completedCount', { completed: completedCount, total: RESEARCH_TYPE_CONFIGS.length })}
               </p>
             </div>
           )}
@@ -162,17 +160,12 @@ export default function ResearchChoicePage() {
         {/* Info Section */}
         <div className="mt-8 bg-surface-elevated border border-border-light rounded-lg p-6">
           <h3 className="text-lg font-semibold text-text-primary mb-2">
-            💡 How it works
+            {t('research.howItWorks')}
           </h3>
           <ul className="space-y-2 text-sm text-text-secondary">
-            <li>• Click on a research type to start gathering intelligence</li>
-            <li>• Each research type runs independently (2-5 minutes each)</li>
-            <li>
-              • You can run one, two, or all three types for your idea
-            </li>
-            <li>
-              • Once completed, click again to view results
-            </li>
+            {translations[language].research.howItWorksDesc.map((item, idx) => (
+              <li key={idx}>• {item}</li>
+            ))}
           </ul>
         </div>
       </div>

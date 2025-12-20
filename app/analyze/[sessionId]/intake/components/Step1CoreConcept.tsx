@@ -2,12 +2,14 @@
 
 import { UseFormReturn } from 'react-hook-form';
 import { StructuredIdea } from '@/lib/validation/schemas';
+import { useTranslation } from '@/i18n';
 
 interface Step1CoreConceptProps {
   form: UseFormReturn<StructuredIdea>;
 }
 
 export default function Step1CoreConcept({ form }: Step1CoreConceptProps) {
+  const { t } = useTranslation();
   const {
     register,
     watch,
@@ -29,23 +31,23 @@ export default function Step1CoreConcept({ form }: Step1CoreConceptProps) {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-text-primary mb-2">
-          Core Concept
+          {t('intake.step1Title')}
         </h2>
         <p className="text-text-secondary">
-          Let&apos;s start with the essentials. Describe your idea in a clear and concise way.
+          {t('intake.step1Desc')}
         </p>
       </div>
 
       {/* High Concept */}
       <div>
         <label className="block text-sm font-medium text-text-primary mb-2">
-          Describe your idea in one sentence <span className="text-severity-1-catastrophic">*</span>
+          {t('intake.highConceptLabel')} <span className="text-severity-1-catastrophic">*</span>
         </label>
         <input
           type="text"
           {...register('high_concept')}
           maxLength={150}
-          placeholder="A platform that helps solo founders validate startup ideas through AI-powered adversarial analysis"
+          placeholder={t('intake.highConceptPlaceholder')}
           className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-brand-light outline-none transition-colors text-text-primary ${
             errors.high_concept
               ? 'border-severity-1-catastrophic'
@@ -67,13 +69,13 @@ export default function Step1CoreConcept({ form }: Step1CoreConceptProps) {
       {/* Value Proposition */}
       <div>
         <label className="block text-sm font-medium text-text-primary mb-2">
-          What problem does this solve, and for whom? <span className="text-severity-1-catastrophic">*</span>
+          {t('intake.valuePropositionLabel')} <span className="text-severity-1-catastrophic">*</span>
         </label>
         <textarea
           {...register('value_proposition')}
           maxLength={300}
           rows={4}
-          placeholder="Founders spend weeks gathering feedback, only to realize critical flaws too late. We help solo founders and early-stage entrepreneurs identify risks before investing time and money."
+          placeholder={t('intake.valuePropositionPlaceholder')}
           className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-brand-light outline-none transition-colors resize-none text-text-primary ${
             errors.value_proposition
               ? 'border-severity-1-catastrophic'
@@ -95,13 +97,13 @@ export default function Step1CoreConcept({ form }: Step1CoreConceptProps) {
       {/* Success Metric */}
       <div>
         <label className="block text-sm font-medium text-text-primary mb-2">
-          What does success look like in 18 months? (Be specific and measurable) <span className="text-severity-1-catastrophic">*</span>
+          {t('intake.successMetricLabel')} <span className="text-severity-1-catastrophic">*</span>
         </label>
         <input
           type="text"
           {...register('success_metric_18m')}
           maxLength={150}
-          placeholder="10,000 validated ideas with 70% accuracy on risk prediction"
+          placeholder={t('intake.successMetricPlaceholder')}
           className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-brand-light outline-none transition-colors text-text-primary ${
             errors.success_metric_18m
               ? 'border-severity-1-catastrophic'

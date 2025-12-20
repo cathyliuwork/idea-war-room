@@ -20,7 +20,7 @@
 
 **Integration Point**:
 - Menu item in parent project navigation
-- Redirect endpoint: `https://idea-war-room.com/auth/callback?token={jwt}`
+- Redirect endpoint: `https://idea-war-room.com/auth/callback?token={jwt}&lang={en|zh}`
 
 **Parent Authentication Stack**:
 - NextAuth (next-auth) for session management
@@ -113,7 +113,8 @@ User (already logged in) → Click "Idea War Room" menu → Generate JWT → Red
 - System: Signs JWT with shared secret key (HS256 algorithm)
 
 **Step 5**: Parent redirects to MVP
-- System: Redirects to `https://idea-war-room.com/auth/callback?token=eyJxx...`
+- System: Determines user's language preference (from parent settings)
+- System: Redirects to `https://idea-war-room.com/auth/callback?token=eyJxx...&lang=zh`
 - Browser: Navigates to MVP
 
 **Step 6**: MVP validates and logs in user
@@ -239,6 +240,27 @@ Parent project uses NextAuth with the following session structure:
 │         [Retry]    [Close]              │
 └─────────────────────────────────────────┘
 ```
+
+---
+
+### Language Parameter
+
+The `lang` URL parameter enables internationalization support:
+
+| Parameter | Values | Default | Description |
+|-----------|--------|---------|-------------|
+| `lang` | `en`, `zh` | `en` | User interface language |
+
+**Implementation Notes**:
+1. Parent determines language from user settings or system locale
+2. Language is passed as URL parameter: `?token=xxx&lang=zh`
+3. MVP stores language in HTTP cookie (1 year expiration)
+4. Language cannot be changed by user within MVP
+5. See [S-06: Internationalization](../system/S-06-internationalization.md) for full specification
+
+**URL Format Examples**:
+- English: `https://idea-war-room.com/auth/callback?token=eyJxx...&lang=en`
+- Chinese: `https://idea-war-room.com/auth/callback?token=eyJxx...&lang=zh`
 
 ---
 
@@ -488,8 +510,15 @@ export async function GET(request: Request) {
     // Log for security audit
     console.log(`[MVP Access] user=${user.uuid} email=${user.email} timestamp=${new Date().toISOString()}`);
 
-    // Redirect to MVP with token
-    const redirectUrl = `${MVP_URL}/auth/callback?token=${token}`;
+    // Determine user's language preference
+    // Option 1: From user profile settings
+    // Option 2: From browser Accept-Language header
+    // Option 3: Default to 'en'
+    const userLang = user.language || 'en';
+    const lang = ['en', 'zh'].includes(userLang) ? userLang : 'en';
+
+    // Redirect to MVP with token and language
+    const redirectUrl = `${MVP_URL}/auth/callback?token=${token}&lang=${lang}`;
     return NextResponse.redirect(redirectUrl);
 
   } catch (error) {

@@ -17,6 +17,7 @@ import type {
   TypedResearchResult,
 } from '@/lib/validation/schemas';
 import { SEARCH_RESULTS_PER_QUERY } from '@/lib/constants/research';
+import type { PromptLanguage } from '../llm/prompts/language-instructions';
 
 /**
  * Research Engine
@@ -38,7 +39,8 @@ import { SEARCH_RESULTS_PER_QUERY } from '@/lib/constants/research';
 export async function conductResearch(
   structuredIdea: StructuredIdea,
   type: 'competitor',
-  reuseQueries?: string[]
+  reuseQueries?: string[],
+  language?: PromptLanguage
 ): Promise<CompetitorResearch>;
 
 /**
@@ -47,7 +49,8 @@ export async function conductResearch(
 export async function conductResearch(
   structuredIdea: StructuredIdea,
   type: 'community',
-  reuseQueries?: string[]
+  reuseQueries?: string[],
+  language?: PromptLanguage
 ): Promise<CommunityResearch>;
 
 /**
@@ -56,7 +59,8 @@ export async function conductResearch(
 export async function conductResearch(
   structuredIdea: StructuredIdea,
   type: 'regulatory',
-  reuseQueries?: string[]
+  reuseQueries?: string[],
+  language?: PromptLanguage
 ): Promise<RegulatoryResearch>;
 
 /**
@@ -65,13 +69,15 @@ export async function conductResearch(
  * @param structuredIdea - Structured idea from Prompt A
  * @param type - Research type to execute (competitor, community, or regulatory)
  * @param reuseQueries - Optional array of queries to reuse (skips query generation)
+ * @param language - Output language for synthesis results (default: 'en')
  * @returns Type-specific research result
  * @throws Error if critical steps fail
  */
 export async function conductResearch(
   structuredIdea: StructuredIdea,
   type: 'competitor' | 'community' | 'regulatory',
-  reuseQueries?: string[]
+  reuseQueries?: string[],
+  language: PromptLanguage = 'en'
 ): Promise<TypedResearchResult> {
   console.log('🔬 Starting research phase...');
 
@@ -200,7 +206,7 @@ export async function conductResearch(
     if (shouldRunCompetitor) {
       console.log('🔬 Synthesizing competitor profiles...');
       try {
-        competitors = await synthesizeCompetitors(competitorResults.queries);
+        competitors = await synthesizeCompetitors(competitorResults.queries, language);
         console.log(`✅ Found ${competitors.length} competitors`);
       } catch (error) {
         console.error('⚠️ Competitor synthesis failed:', error);
@@ -212,7 +218,7 @@ export async function conductResearch(
     if (shouldRunCommunity) {
       console.log('🔬 Analyzing community sentiment...');
       try {
-        communitySignals = await synthesizeCommunitySignals(communityResults.queries);
+        communitySignals = await synthesizeCommunitySignals(communityResults.queries, language);
         console.log(`✅ Found ${communitySignals.length} community signals`);
       } catch (error) {
         console.error('⚠️ Community synthesis failed:', error);
@@ -225,7 +231,7 @@ export async function conductResearch(
       console.log('🔬 Extracting regulatory requirements...');
       try {
         if (regulatory_queries.length > 0 && regulatoryResults.queries.length > 0) {
-          regulatorySignals = await synthesizeRegulatorySignals(regulatoryResults.queries);
+          regulatorySignals = await synthesizeRegulatorySignals(regulatoryResults.queries, language);
           console.log(`✅ Found ${regulatorySignals.length} regulatory signals`);
         } else {
           regulatorySignals = [];
