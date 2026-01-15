@@ -2,7 +2,8 @@
 
 import { UseFormReturn } from 'react-hook-form';
 import { StructuredIdea } from '@/lib/validation/schemas';
-import { useTranslation } from '@/i18n';
+import { useTranslation, useLanguage } from '@/i18n';
+import { getCharLimits } from '@/lib/validation/char-limits';
 
 interface Step1CoreConceptProps {
   form: UseFormReturn<StructuredIdea>;
@@ -10,6 +11,8 @@ interface Step1CoreConceptProps {
 
 export default function Step1CoreConcept({ form }: Step1CoreConceptProps) {
   const { t } = useTranslation();
+  const { language } = useLanguage();
+  const limits = getCharLimits(language);
   const {
     register,
     watch,
@@ -46,7 +49,7 @@ export default function Step1CoreConcept({ form }: Step1CoreConceptProps) {
         <input
           type="text"
           {...register('high_concept')}
-          maxLength={150}
+          maxLength={limits.high_concept}
           placeholder={t('intake.highConceptPlaceholder')}
           className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-brand-light outline-none transition-colors text-text-primary ${
             errors.high_concept
@@ -60,8 +63,8 @@ export default function Step1CoreConcept({ form }: Step1CoreConceptProps) {
               {errors.high_concept.message}
             </p>
           )}
-          <span className={`text-xs ml-auto ${getCharCounterColor(highConcept.length, 150)}`}>
-            {highConcept.length} / 150
+          <span className={`text-xs ml-auto ${getCharCounterColor(highConcept.length, limits.high_concept)}`}>
+            {highConcept.length} / {limits.high_concept}
           </span>
         </div>
       </div>
@@ -73,7 +76,7 @@ export default function Step1CoreConcept({ form }: Step1CoreConceptProps) {
         </label>
         <textarea
           {...register('value_proposition')}
-          maxLength={300}
+          maxLength={limits.value_proposition}
           rows={4}
           placeholder={t('intake.valuePropositionPlaceholder')}
           className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-brand-light outline-none transition-colors resize-none text-text-primary ${
@@ -88,8 +91,8 @@ export default function Step1CoreConcept({ form }: Step1CoreConceptProps) {
               {errors.value_proposition.message}
             </p>
           )}
-          <span className={`text-xs ml-auto ${getCharCounterColor(valueProposition.length, 300)}`}>
-            {valueProposition.length} / 300
+          <span className={`text-xs ml-auto ${getCharCounterColor(valueProposition.length, limits.value_proposition)}`}>
+            {valueProposition.length} / {limits.value_proposition}
           </span>
         </div>
       </div>
@@ -99,12 +102,12 @@ export default function Step1CoreConcept({ form }: Step1CoreConceptProps) {
         <label className="block text-sm font-medium text-text-primary mb-2">
           {t('intake.successMetricLabel')} <span className="text-severity-1-catastrophic">*</span>
         </label>
-        <input
-          type="text"
+        <textarea
           {...register('success_metric_18m')}
-          maxLength={150}
+          maxLength={limits.success_metric_18m}
+          rows={3}
           placeholder={t('intake.successMetricPlaceholder')}
-          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-brand-light outline-none transition-colors text-text-primary ${
+          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-brand-light outline-none transition-colors resize-none text-text-primary ${
             errors.success_metric_18m
               ? 'border-severity-1-catastrophic'
               : 'border-border-medium focus:border-brand-primary'
@@ -116,8 +119,8 @@ export default function Step1CoreConcept({ form }: Step1CoreConceptProps) {
               {errors.success_metric_18m.message}
             </p>
           )}
-          <span className={`text-xs ml-auto ${getCharCounterColor(successMetric.length, 150)}`}>
-            {successMetric.length} / 150
+          <span className={`text-xs ml-auto ${getCharCounterColor(successMetric.length, limits.success_metric_18m)}`}>
+            {successMetric.length} / {limits.success_metric_18m}
           </span>
         </div>
       </div>

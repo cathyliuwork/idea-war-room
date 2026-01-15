@@ -3,7 +3,8 @@
 import { UseFormReturn } from 'react-hook-form';
 import { StructuredIdea } from '@/lib/validation/schemas';
 import ArrayFieldInput from './ArrayFieldInput';
-import { useTranslation } from '@/i18n';
+import { useTranslation, useLanguage } from '@/i18n';
+import { getCharLimits } from '@/lib/validation/char-limits';
 
 interface Step3AssumptionsAssetsProps {
   form: UseFormReturn<StructuredIdea>;
@@ -11,6 +12,8 @@ interface Step3AssumptionsAssetsProps {
 
 export default function Step3AssumptionsAssets({ form }: Step3AssumptionsAssetsProps) {
   const { t } = useTranslation();
+  const { language } = useLanguage();
+  const limits = getCharLimits(language);
   const {
     watch,
     setValue,
@@ -43,7 +46,7 @@ export default function Step3AssumptionsAssets({ form }: Step3AssumptionsAssetsP
         <ArrayFieldInput
           label={t('intake.marketAssumptionsLabel')}
           helperText={t('intake.marketAssumptionsHelper')}
-          maxLength={200}
+          maxLength={limits.assumptions_item}
           placeholder={t('intake.marketAssumptionsPlaceholder')}
           values={marketAssumptions}
           onChange={(values) => setValue('assumptions.market', values, { shouldValidate: true })}
@@ -55,7 +58,7 @@ export default function Step3AssumptionsAssets({ form }: Step3AssumptionsAssetsP
         <ArrayFieldInput
           label={t('intake.technicalAssumptionsLabel')}
           helperText={t('intake.technicalAssumptionsHelper')}
-          maxLength={200}
+          maxLength={limits.assumptions_item}
           placeholder={t('intake.technicalAssumptionsPlaceholder')}
           values={technicalAssumptions}
           onChange={(values) => setValue('assumptions.technical', values, { shouldValidate: true })}
@@ -67,7 +70,7 @@ export default function Step3AssumptionsAssets({ form }: Step3AssumptionsAssetsP
         <ArrayFieldInput
           label={t('intake.businessModelAssumptionsLabel')}
           helperText={t('intake.businessModelAssumptionsHelper')}
-          maxLength={200}
+          maxLength={limits.assumptions_item}
           placeholder={t('intake.businessModelAssumptionsPlaceholder')}
           values={businessModelAssumptions}
           onChange={(values) => setValue('assumptions.business_model', values, { shouldValidate: true })}
@@ -86,7 +89,7 @@ export default function Step3AssumptionsAssets({ form }: Step3AssumptionsAssetsP
         <ArrayFieldInput
           label={t('intake.keyAssetsLabel')}
           helperText={t('intake.keyAssetsHelper')}
-          maxLength={150}
+          maxLength={limits.assets_item}
           placeholder={t('intake.keyAssetsPlaceholder')}
           values={keyAssets}
           onChange={(values) => setValue('assets.key_assets', values, { shouldValidate: true })}
@@ -98,7 +101,7 @@ export default function Step3AssumptionsAssets({ form }: Step3AssumptionsAssetsP
         <ArrayFieldInput
           label={t('intake.brandNarrativeLabel')}
           helperText={t('intake.brandNarrativeHelper')}
-          maxLength={150}
+          maxLength={limits.assets_item}
           placeholder={t('intake.brandNarrativePlaceholder')}
           values={brandNarrative}
           onChange={(values) => setValue('assets.brand_narrative', values, { shouldValidate: true })}

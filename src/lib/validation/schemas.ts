@@ -12,25 +12,25 @@ import { z } from 'zod';
  * This is the MVTA-formatted idea structure that LLM generates from raw input.
  */
 export const StructuredIdeaSchema = z.object({
-  high_concept: z.string().min(10, 'At least 10 characters').max(150, 'Maximum 150 characters'),
-  value_proposition: z.string().min(20, 'At least 20 characters').max(300, 'Maximum 300 characters'),
-  success_metric_18m: z.string().min(10, 'At least 10 characters').max(150, 'Maximum 150 characters'),
+  high_concept: z.string().min(10, 'At least 10 characters').max(1000, 'Maximum 1000 characters'),
+  value_proposition: z.string().min(20, 'At least 20 characters').max(2000, 'Maximum 2000 characters'),
+  success_metric_18m: z.string().min(10, 'At least 10 characters').max(2000, 'Maximum 2000 characters'),
 
   assumptions: z.object({
-    market: z.array(z.string().max(200, 'Each item max 200 characters')).default([]),
-    technical: z.array(z.string().max(200, 'Each item max 200 characters')).default([]),
-    business_model: z.array(z.string().max(200, 'Each item max 200 characters')).default([]),
+    market: z.array(z.string().max(1000, 'Each item max 1000 characters')).default([]),
+    technical: z.array(z.string().max(1000, 'Each item max 1000 characters')).default([]),
+    business_model: z.array(z.string().max(1000, 'Each item max 1000 characters')).default([]),
   }).default({ market: [], technical: [], business_model: [] }),
 
   assets: z.object({
-    key_assets: z.array(z.string().max(150, 'Each item max 150 characters')).default([]),
-    brand_narrative: z.array(z.string().max(150, 'Each item max 150 characters')).default([]),
+    key_assets: z.array(z.string().max(1000, 'Each item max 1000 characters')).default([]),
+    brand_narrative: z.array(z.string().max(1000, 'Each item max 1000 characters')).default([]),
   }).default({ key_assets: [], brand_narrative: [] }),
 
   environment: z.object({
-    user_persona: z.string().min(20, 'At least 20 characters').max(300, 'Maximum 300 characters'),
-    competitive_landscape: z.string().min(20, 'At least 20 characters').max(400, 'Maximum 400 characters'),
-    regulatory_context: z.string().max(400, 'Maximum 400 characters').default(''),
+    user_persona: z.string().min(20, 'At least 20 characters').max(2000, 'Maximum 2000 characters'),
+    competitive_landscape: z.string().min(20, 'At least 20 characters').max(2000, 'Maximum 2000 characters'),
+    regulatory_context: z.string().max(2000, 'Maximum 2000 characters').default(''),
   }),
 });
 

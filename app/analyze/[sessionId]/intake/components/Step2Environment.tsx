@@ -2,7 +2,8 @@
 
 import { UseFormReturn } from 'react-hook-form';
 import { StructuredIdea } from '@/lib/validation/schemas';
-import { useTranslation } from '@/i18n';
+import { useTranslation, useLanguage } from '@/i18n';
+import { getCharLimits } from '@/lib/validation/char-limits';
 
 interface Step2EnvironmentProps {
   form: UseFormReturn<StructuredIdea>;
@@ -10,6 +11,8 @@ interface Step2EnvironmentProps {
 
 export default function Step2Environment({ form }: Step2EnvironmentProps) {
   const { t } = useTranslation();
+  const { language } = useLanguage();
+  const limits = getCharLimits(language);
   const {
     register,
     watch,
@@ -45,7 +48,7 @@ export default function Step2Environment({ form }: Step2EnvironmentProps) {
         </label>
         <textarea
           {...register('environment.user_persona')}
-          maxLength={300}
+          maxLength={limits.user_persona}
           rows={4}
           placeholder={t('intake.userPersonaPlaceholder')}
           className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-brand-light outline-none transition-colors resize-none text-text-primary ${
@@ -60,8 +63,8 @@ export default function Step2Environment({ form }: Step2EnvironmentProps) {
               {errors.environment.user_persona.message}
             </p>
           )}
-          <span className={`text-xs ml-auto ${getCharCounterColor(userPersona.length, 300)}`}>
-            {userPersona.length} / 300
+          <span className={`text-xs ml-auto ${getCharCounterColor(userPersona.length, limits.user_persona)}`}>
+            {userPersona.length} / {limits.user_persona}
           </span>
         </div>
       </div>
@@ -73,7 +76,7 @@ export default function Step2Environment({ form }: Step2EnvironmentProps) {
         </label>
         <textarea
           {...register('environment.competitive_landscape')}
-          maxLength={400}
+          maxLength={limits.competitive_landscape}
           rows={5}
           placeholder={t('intake.competitiveLandscapePlaceholder')}
           className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-brand-light outline-none transition-colors resize-none text-text-primary ${
@@ -88,8 +91,8 @@ export default function Step2Environment({ form }: Step2EnvironmentProps) {
               {errors.environment.competitive_landscape.message}
             </p>
           )}
-          <span className={`text-xs ml-auto ${getCharCounterColor(competitiveLandscape.length, 400)}`}>
-            {competitiveLandscape.length} / 400
+          <span className={`text-xs ml-auto ${getCharCounterColor(competitiveLandscape.length, limits.competitive_landscape)}`}>
+            {competitiveLandscape.length} / {limits.competitive_landscape}
           </span>
         </div>
       </div>
@@ -101,14 +104,14 @@ export default function Step2Environment({ form }: Step2EnvironmentProps) {
         </label>
         <textarea
           {...register('environment.regulatory_context')}
-          maxLength={400}
+          maxLength={limits.regulatory_context}
           rows={4}
           placeholder={t('intake.regulatoryContextPlaceholder')}
           className="w-full px-4 py-3 border border-border-medium rounded-lg focus:border-brand-primary focus:ring-2 focus:ring-brand-light outline-none transition-colors resize-none text-text-primary"
         />
         <div className="flex justify-end mt-1">
-          <span className={`text-xs ${getCharCounterColor(regulatoryContext.length, 400)}`}>
-            {regulatoryContext.length} / 400
+          <span className={`text-xs ${getCharCounterColor(regulatoryContext.length, limits.regulatory_context)}`}>
+            {regulatoryContext.length} / {limits.regulatory_context}
           </span>
         </div>
       </div>
