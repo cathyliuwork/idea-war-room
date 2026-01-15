@@ -6,23 +6,34 @@
  */
 
 /**
+ * Quota reset type - all tiers use monthly reset
+ */
+export type QuotaResetType = 'monthly';
+
+/**
  * Session quota information for a user
  */
 export interface SessionQuota {
-  /** Number of sessions already used */
+  /** Number of sessions already used in current period */
   used: number;
 
-  /** Maximum sessions allowed (null = unlimited) */
-  limit: number | null;
+  /** Maximum sessions allowed per month */
+  limit: number;
 
-  /** Number of sessions remaining (null = unlimited) */
-  remaining: number | null;
+  /** Number of sessions remaining this month */
+  remaining: number;
 
   /** Whether the user has reached their limit */
   isLimitReached: boolean;
 
   /** User's member level for context */
   memberLevel: number;
+
+  /** Quota reset type */
+  resetType: QuotaResetType;
+
+  /** Next reset date in ISO format (first day of next month) */
+  resetDate: string;
 }
 
 /**

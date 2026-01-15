@@ -265,9 +265,13 @@
     "sessionsUsed": "已使用 {used} / {total} 次会话",
     "sessionsCreated": "次会话已创建",
     "sessionUsage": "会话使用情况",
+    "monthlyUsage": "本月使用情况",
+    "thisMonth": "/月",
     "unlimited": "无限制",
     "upgrade": "升级",
     "limitReached": "已达到会话上限",
+    "limitReachedMonthly": "本月配额已用完，{date}重置",
+    "resetsOn": "{date}重置",
     "upgradeMessage": "升级会员以创建更多会话。"
   },
   "errors": {

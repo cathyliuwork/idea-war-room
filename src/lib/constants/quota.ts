@@ -1,35 +1,53 @@
 /**
  * Session Quota Configuration
  *
- * Defines session limits per membership tier.
+ * Defines monthly session limits per membership tier.
  *
  * Membership Levels:
- * - 0: Free tier
- * - 1: Basic tier
- * - 2+: Pro tier (unlimited)
+ * - 0: Free tier (2 sessions/month)
+ * - 1: Basic tier (5 sessions/month)
+ * - 2+: Pro tier (20 sessions/month)
  */
 
+import { QuotaResetType } from '@/types/quota';
+
 /**
- * Session limits by member level
- * null indicates unlimited sessions
+ * Quota configuration per member level
  */
-export const SESSION_LIMITS: Record<number, number | null> = {
-  0: 2, // Free tier: 2 sessions lifetime
-  1: 5, // Basic tier: 5 sessions lifetime
-  // member >= 2: unlimited (handled by getSessionLimit function)
+export interface QuotaConfig {
+  limit: number;
+  resetType: QuotaResetType;
+}
+
+/**
+ * Session quota configuration by member level
+ * All tiers use monthly reset
+ */
+export const SESSION_QUOTA_CONFIG: Record<number, QuotaConfig> = {
+  0: { limit: 2, resetType: 'monthly' }, // Free: 2 sessions/month
+  1: { limit: 5, resetType: 'monthly' }, // Basic: 5 sessions/month
+  2: { limit: 20, resetType: 'monthly' }, // Pro: 20 sessions/month
 };
 
 /**
- * Get session limit for a given member level
+ * Get quota configuration for a given member level
  *
  * @param memberLevel - User's member level (0=Free, 1=Basic, 2+=Pro)
- * @returns Session limit or null if unlimited
+ * @returns Quota configuration with limit and reset type
  */
-export function getSessionLimit(memberLevel: number): number | null {
+export function getQuotaConfig(memberLevel: number): QuotaConfig {
   if (memberLevel >= 2) {
-    return null; // Unlimited for Pro and above
+    return SESSION_QUOTA_CONFIG[2]; // Pro tier
   }
-  return SESSION_LIMITS[memberLevel] ?? 2; // Default to free tier limit
+  return SESSION_QUOTA_CONFIG[memberLevel] ?? SESSION_QUOTA_CONFIG[0];
+}
+
+/**
+ * Get session limit for a given member level
+ * @deprecated Use getQuotaConfig instead
+ */
+export function getSessionLimit(memberLevel: number): number {
+  return getQuotaConfig(memberLevel).limit;
 }
 
 /**

@@ -1,31 +1,58 @@
 import { createServerSupabaseClient } from '@/lib/supabase/client';
 import { User } from '@/types/auth';
 import { SessionQuota } from '@/types/quota';
-import { getSessionLimit } from '@/lib/constants/quota';
+import { getQuotaConfig } from '@/lib/constants/quota';
 
 /**
  * Session Quota Management
  *
- * Provides functions for checking and enforcing session quotas
+ * Provides functions for checking and enforcing monthly session quotas
  * based on user membership tier.
  */
 
 /**
- * Get the count of sessions for a user
+ * Get the start of the current month in UTC
+ */
+function getMonthStartUTC(): Date {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0));
+}
+
+/**
+ * Get the start of the next month in UTC (for reset date display)
+ */
+function getNextMonthStartUTC(): Date {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1, 0, 0, 0, 0));
+}
+
+/**
+ * Get the count of sessions for a user within a time period
  *
- * Counts all sessions including drafts (sessions without ideas).
+ * Counts sessions created on or after the specified date.
  * This ensures quota is enforced from the moment a session is created.
  *
  * @param userId - Internal user UUID
- * @returns Total number of sessions for this user
+ * @param since - Count sessions created on or after this date
+ * @returns Total number of sessions for this user in the period
  */
-export async function getUserSessionCount(userId: string): Promise<number> {
+export async function getUserSessionCount(
+  userId: string,
+  since?: Date
+): Promise<number> {
   const supabase = createServerSupabaseClient();
 
-  const { count, error } = await supabase
+  let query = supabase
     .from('sessions')
     .select('*', { count: 'exact', head: true })
     .eq('user_id', userId);
+
+  // Add time filter for monthly quota
+  if (since) {
+    query = query.gte('created_at', since.toISOString());
+  }
+
+  const { count, error } = await query;
 
   if (error) {
     throw new Error(`Failed to count sessions: ${error.message}`);
@@ -37,16 +64,22 @@ export async function getUserSessionCount(userId: string): Promise<number> {
 /**
  * Get quota information for a user
  *
+ * All tiers use monthly quota reset.
+ *
  * @param user - Authenticated user object
  * @returns SessionQuota object with usage details
  */
 export async function getQuotaInfo(user: User): Promise<SessionQuota> {
-  const used = await getUserSessionCount(user.id);
-  const limit = getSessionLimit(user.member);
+  const config = getQuotaConfig(user.member);
+  const { limit, resetType } = config;
 
-  const isUnlimited = limit === null;
-  const remaining = isUnlimited ? null : Math.max(0, limit - used);
-  const isLimitReached = !isUnlimited && used >= limit;
+  // All tiers use monthly quota - count only current month's sessions
+  const since = getMonthStartUTC();
+  const resetDate = getNextMonthStartUTC().toISOString();
+
+  const used = await getUserSessionCount(user.id, since);
+  const remaining = Math.max(0, limit - used);
+  const isLimitReached = used >= limit;
 
   return {
     used,
@@ -54,6 +87,8 @@ export async function getQuotaInfo(user: User): Promise<SessionQuota> {
     remaining,
     isLimitReached,
     memberLevel: user.member,
+    resetType,
+    resetDate,
   };
 }
 

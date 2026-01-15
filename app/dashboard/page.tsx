@@ -179,21 +179,13 @@ export default function Dashboard() {
             {t('dashboard.startNewAnalysis')}
           </button>
 
-          {/* Remaining sessions hint */}
-          {quota && quota.remaining !== null && !isCreateDisabled && (
+          {/* Remaining sessions hint - all tiers now have monthly limits */}
+          {quota && !isCreateDisabled && (
             <p className="text-text-secondary text-sm mt-3 flex items-center gap-1.5">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               {t('dashboard.sessionsRemaining', { count: quota.remaining })}
-            </p>
-          )}
-          {quota && quota.limit === null && (
-            <p className="text-text-secondary text-sm mt-3 flex items-center gap-1.5">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              {t('dashboard.unlimitedSessions')}
             </p>
           )}
         </div>
@@ -205,7 +197,7 @@ export default function Dashboard() {
               {t('dashboard.recentSessions')}
             </h3>
             {quota && (
-              <div className="w-48">
+              <div className="w-56">
                 <QuotaDisplay quota={quota} variant="full" />
               </div>
             )}

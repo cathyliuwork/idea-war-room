@@ -265,9 +265,13 @@
     "sessionsUsed": "{used} of {total} sessions used",
     "sessionsCreated": "sessions created",
     "sessionUsage": "Session Usage",
+    "monthlyUsage": "Monthly Usage",
+    "thisMonth": "/mo",
     "unlimited": "Unlimited",
     "upgrade": "Upgrade",
     "limitReached": "Session limit reached",
+    "limitReachedMonthly": "Monthly limit reached. Resets on {date}.",
+    "resetsOn": "Resets on {date}",
     "upgradeMessage": "Upgrade your membership to create more sessions."
   },
   "errors": {
