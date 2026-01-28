@@ -257,7 +257,7 @@ export default function ResearchResultsPage() {
             {snapshot.queries.map((query, index) => (
               <div
                 key={index}
-                className="bg-surface-base border border-border-light rounded px-4 py-2 text-sm text-text-secondary"
+                className="bg-surface-base border border-border-light rounded-sm px-4 py-2 text-sm text-text-secondary"
               >
                 {index + 1}. {query}
               </div>
@@ -452,7 +452,7 @@ function CommunityCard({ result, index, t }: { result: any; index: number; t: (k
           {result.themes.map((theme: string, i: number) => (
             <span
               key={i}
-              className="px-2 py-1 bg-surface-base text-text-secondary text-xs rounded"
+              className="px-2 py-1 bg-surface-base text-text-secondary text-xs rounded-sm"
             >
               {theme}
             </span>
@@ -499,7 +499,7 @@ function RegulatoryCard({ result, index, t }: { result: any; index: number; t: (
       )}
 
       {result.penalties && (
-        <div className="bg-red-50/10 border border-red-500/20 rounded p-3">
+        <div className="bg-red-50/10 border border-red-500/20 rounded-sm p-3">
           <p className="text-sm font-semibold text-red-600 mb-1">
             {t('research.penaltiesForNonCompliance')}:
           </p>
@@ -522,7 +522,7 @@ function GenericCard({ result, index, t }: { result: any; index: number; t: (key
       <h3 className="text-lg font-bold text-text-primary mb-3">
         {t('research.result')} {index + 1}
       </h3>
-      <pre className="text-xs text-text-secondary overflow-auto bg-surface-base rounded p-4">
+      <pre className="text-xs text-text-secondary overflow-auto bg-surface-base rounded-sm p-4">
         {JSON.stringify(result, null, 2)}
       </pre>
     </div>

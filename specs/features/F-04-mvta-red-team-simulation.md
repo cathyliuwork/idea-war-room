@@ -352,7 +352,7 @@ export default function AnalysisLoader({ sessionId }: { sessionId: string }) {
         <p className="text-red-600 mb-4">{error}</p>
         <button
           onClick={() => window.location.reload()}
-          className="px-6 py-2 bg-blue-600 text-white rounded"
+          className="px-6 py-2 bg-blue-600 text-white rounded-sm"
         >
           Retry Analysis
         </button>

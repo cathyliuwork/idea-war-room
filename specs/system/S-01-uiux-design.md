@@ -320,7 +320,7 @@
   rounded-lg
   hover:bg-brand-hover
   transition-colors duration-200
-  focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2
+  focus:outline-hidden focus:ring-2 focus:ring-brand-primary focus:ring-offset-2
 ">
   Start MVTA Analysis
 </button>
@@ -359,7 +359,7 @@
   border border-border-light
   rounded-lg
   p-8
-  shadow-sm
+  shadow-xs
   hover:shadow-md
   transition-shadow duration-200
 ">
@@ -372,7 +372,7 @@
   border-l-4 border-severity-1-catastrophic
   rounded-lg
   p-6
-  shadow-sm
+  shadow-xs
 ">
   <div className="flex items-start justify-between">
     <div>
@@ -415,7 +415,7 @@
       border border-border-medium
       rounded-lg
       text-base
-      focus:outline-none
+      focus:outline-hidden
       focus:ring-2
       focus:ring-brand-primary
       focus:border-transparent
@@ -438,7 +438,7 @@
     rounded-lg
     text-base
     resize-none
-    focus:outline-none
+    focus:outline-hidden
     focus:ring-2
     focus:ring-brand-primary
   "
@@ -738,7 +738,7 @@
 
 ### Micro-interactions
 - Button press: scale(0.98) on active
-- Card hover: shadow-sm → shadow-md
+- Card hover: shadow-xs → shadow-md
 - Success state: brief green flash on vulnerability card when analysis completes
 
 ---

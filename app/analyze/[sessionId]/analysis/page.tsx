@@ -90,7 +90,7 @@ export default function AnalysisPage() {
             <div className="space-y-4">
               <button
                 onClick={handleStartAnalysis}
-                className="px-6 py-3 bg-brand-primary text-white font-semibold rounded-lg hover:bg-brand-hover transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-3 bg-brand-primary text-white font-semibold rounded-lg hover:bg-brand-hover transition-colors shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isAnalyzing}
               >
                 {isAnalyzing ? t('analysis.attackingInProgress') : t('analysis.startAnalysis')}
@@ -131,7 +131,7 @@ export default function AnalysisPage() {
 
               <button
                 onClick={() => router.push(`/analyze/${sessionId}/report`)}
-                className="px-6 py-3 bg-brand-primary text-white font-semibold rounded-lg hover:bg-brand-hover transition-colors shadow-sm"
+                className="px-6 py-3 bg-brand-primary text-white font-semibold rounded-lg hover:bg-brand-hover transition-colors shadow-xs"
               >
                 {t('analysis.viewDamageReport')}
               </button>

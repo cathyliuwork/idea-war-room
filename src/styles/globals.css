@@ -1,6 +1,69 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
+  --font-mono: JetBrains Mono, Fira Code, Consolas, monospace;
+
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f9fafb;
+  --color-bg-tertiary: #f3f4f6;
+  --color-text-primary: #111827;
+  --color-text-secondary: #6b7280;
+  --color-text-tertiary: #9ca3af;
+  --color-border-light: #e5e7eb;
+  --color-border-medium: #d1d5db;
+  --color-border-dark: #9ca3af;
+  --color-brand-primary: #2563eb;
+  --color-brand-hover: #1d4ed8;
+  --color-brand-light: #dbeafe;
+  --color-severity-1-catastrophic: #dc2626;
+  --color-severity-1-bg: #fee2e2;
+  --color-severity-2-critical: #ea580c;
+  --color-severity-2-bg: #ffedd5;
+  --color-severity-3-significant: #d97706;
+  --color-severity-3-bg: #fef3c7;
+  --color-severity-4-moderate: #059669;
+  --color-severity-4-bg: #d1fae5;
+  --color-severity-5-resilient: #10b981;
+  --color-severity-5-bg: #d1fae5;
+
+  --spacing-micro-1: 4px;
+  --spacing-micro-2: 8px;
+  --spacing-small-1: 12px;
+  --spacing-small-2: 16px;
+  --spacing-medium-1: 24px;
+  --spacing-medium-2: 32px;
+  --spacing-large-1: 40px;
+  --spacing-large-2: 48px;
+  --spacing-xl-1: 64px;
+  --spacing-xl-2: 80px;
+  --spacing-xxl: 96px;
+
+  --container-container: 1280px;
+  --container-reading: 720px;
+
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-card-hover:
+    0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
 
 @layer base {
   :root {

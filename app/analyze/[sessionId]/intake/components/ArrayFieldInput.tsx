@@ -73,7 +73,7 @@ export default function ArrayFieldInput({
                 onChange={(e) => handleChange(index, e.target.value)}
                 maxLength={maxLength}
                 placeholder={placeholder}
-                className="w-full px-3 py-2 border border-border-medium rounded-lg focus:border-brand-primary focus:ring-2 focus:ring-brand-light outline-none transition-colors text-text-primary"
+                className="w-full px-3 py-2 border border-border-medium rounded-lg focus:border-brand-primary focus:ring-2 focus:ring-brand-light outline-hidden transition-colors text-text-primary"
               />
               <div className="flex justify-end mt-1">
                 <span className={`text-xs ${getCharCounterColor(value.length)}`}>

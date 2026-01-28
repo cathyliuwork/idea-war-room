@@ -323,7 +323,7 @@ export default function FeedbackSection({
             <button
               key={star}
               onClick={() => setRating(star)}
-              className="text-3xl focus:outline-none"
+              className="text-3xl focus:outline-hidden"
             >
               {star <= rating ? '⭐' : '☆'}
             </button>
@@ -353,7 +353,7 @@ export default function FeedbackSection({
             onChange={(e) => setFeedbackText(e.target.value)}
             maxLength={500}
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500"
             placeholder="What could be better?"
           />
           <p className="text-xs text-gray-500 mt-1">{feedbackText.length}/500 characters</p>
@@ -363,7 +363,7 @@ export default function FeedbackSection({
         <button
           onClick={handleSubmit}
           disabled={rating === 0 || capturedRisks === null || isSubmitting}
-          className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-6 py-2 bg-blue-600 text-white rounded-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
         </button>

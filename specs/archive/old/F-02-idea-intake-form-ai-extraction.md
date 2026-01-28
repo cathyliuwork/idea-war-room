@@ -544,14 +544,14 @@ export default function IntakeWizard({ sessionId }: IntakeWizardProps) {
         <button
           onClick={handleBack}
           disabled={currentStep === 0}
-          className="px-6 py-2 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-6 py-2 border border-gray-300 rounded-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Back
         </button>
 
         <button
           onClick={handleNext}
-          className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          className="px-6 py-2 bg-blue-600 text-white rounded-sm hover:bg-blue-700"
         >
           {isLastStep ? 'Submit' : 'Next'}
         </button>
@@ -585,7 +585,7 @@ interface QuestionCardProps {
 ```typescript
 export default function QuestionCard({ question, value, onChange }: QuestionCardProps) {
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-8 shadow-sm">
+    <div className="bg-white border border-gray-200 rounded-lg p-8 shadow-xs">
       <h2 className="text-2xl font-bold mb-2">
         {question.title}
         {question.required && <span className="text-red-500 ml-1">*</span>}
@@ -598,7 +598,7 @@ export default function QuestionCard({ question, value, onChange }: QuestionCard
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full min-h-[120px] max-h-[300px] px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+        className="w-full min-h-[120px] max-h-[300px] px-4 py-3 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500 resize-y"
         placeholder="Type your answer here..."
       />
     </div>
@@ -700,7 +700,7 @@ export default function StructuredIdeaReview({
       <div className="flex justify-between">
         <button
           onClick={() => router.back()}
-          className="px-6 py-2 border border-gray-300 rounded hover:bg-gray-50"
+          className="px-6 py-2 border border-gray-300 rounded-sm hover:bg-gray-50"
         >
           Edit Answers
         </button>

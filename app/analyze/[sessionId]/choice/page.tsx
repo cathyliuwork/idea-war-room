@@ -156,7 +156,7 @@ export default function ChoicePage() {
           </div>
           <button
             onClick={() => router.push('/dashboard')}
-            className="px-6 py-3 border border-border-medium text-text-primary rounded-lg hover:border-border-dark transition-colors flex-shrink-0"
+            className="px-6 py-3 border border-border-medium text-text-primary rounded-lg hover:border-border-dark transition-colors shrink-0"
           >
             {t('common.backToDashboard')}
           </button>

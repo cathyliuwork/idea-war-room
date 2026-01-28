@@ -1105,7 +1105,7 @@ interface CompetitorCardProps {
 
 export default function CompetitorCard({ competitor }: CompetitorCardProps) {
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+    <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-xs">
       <h3 className="text-lg font-bold mb-1">{competitor.name}</h3>
       <a
         href={competitor.url}

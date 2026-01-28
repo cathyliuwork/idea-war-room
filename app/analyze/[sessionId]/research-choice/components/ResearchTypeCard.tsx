@@ -47,7 +47,7 @@ export default function ResearchTypeCard({
       </h3>
 
       {/* Description */}
-      <p className="text-sm text-text-secondary mb-4 min-h-[3rem]">
+      <p className="text-sm text-text-secondary mb-4 min-h-12">
         {getLocalizedDescription(config.id)}
       </p>
 

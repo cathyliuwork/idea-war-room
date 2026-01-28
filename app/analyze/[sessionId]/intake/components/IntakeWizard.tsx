@@ -378,7 +378,7 @@ export default function IntakeWizard({ sessionId }: IntakeWizardProps) {
           <button
             type="button"
             onClick={() => form.reset(getSampleIdea(language))}
-            className="px-3 py-1 border border-border-medium text-text-secondary rounded hover:bg-bg-secondary hover:border-brand-primary transition-colors"
+            className="px-3 py-1 border border-border-medium text-text-secondary rounded-sm hover:bg-bg-secondary hover:border-brand-primary transition-colors"
           >
             {getSampleIdeaName(language)}
           </button>
@@ -386,7 +386,7 @@ export default function IntakeWizard({ sessionId }: IntakeWizardProps) {
             <button
               type="button"
               onClick={loadExample2}
-              className="px-3 py-1 border border-border-medium text-text-secondary rounded hover:bg-bg-secondary hover:border-brand-primary transition-colors"
+              className="px-3 py-1 border border-border-medium text-text-secondary rounded-sm hover:bg-bg-secondary hover:border-brand-primary transition-colors"
             >
               Sales Analyzer
             </button>
@@ -395,7 +395,7 @@ export default function IntakeWizard({ sessionId }: IntakeWizardProps) {
             <button
               type="button"
               onClick={loadExample3}
-              className="px-3 py-1 border border-border-medium text-text-secondary rounded hover:bg-bg-secondary hover:border-brand-primary transition-colors"
+              className="px-3 py-1 border border-border-medium text-text-secondary rounded-sm hover:bg-bg-secondary hover:border-brand-primary transition-colors"
             >
               代码审查AI
             </button>
@@ -407,7 +407,7 @@ export default function IntakeWizard({ sessionId }: IntakeWizardProps) {
           <button
             type="button"
             onClick={() => form.reset(getSampleIdea(language))}
-            className="px-3 py-1.5 bg-border-light text-brand-primary rounded hover:bg-brand-light transition-colors"
+            className="px-3 py-1.5 bg-border-light text-brand-primary rounded-sm hover:bg-brand-light transition-colors"
           >
             {getSampleIdeaName(language)}
           </button>

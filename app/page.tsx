@@ -33,7 +33,7 @@ export default function Home() {
 
   // JWT mode: show elegant landing page with login button
   return (
-    <main className="min-h-screen bg-gradient-to-b from-bg-primary to-bg-secondary flex flex-col items-center justify-center p-8">
+    <main className="min-h-screen bg-linear-to-b from-bg-primary to-bg-secondary flex flex-col items-center justify-center p-8">
       <div className="max-w-md w-full">
         {/* Logo/Icon */}
         <div className="flex justify-center mb-8">
@@ -65,7 +65,7 @@ export default function Home() {
 
           <a
             href={parentLoginUrl}
-            className="inline-flex items-center justify-center w-full px-6 py-3 bg-brand-primary text-white font-medium rounded-lg hover:bg-brand-hover transition-colors shadow-sm"
+            className="inline-flex items-center justify-center w-full px-6 py-3 bg-brand-primary text-white font-medium rounded-lg hover:bg-brand-hover transition-colors shadow-xs"
           >
             <svg
               className="w-5 h-5 mr-2"

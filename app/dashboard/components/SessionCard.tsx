@@ -54,7 +54,7 @@ export default function SessionCard({ session }: SessionCardProps) {
       return (
         <button
           onClick={() => router.push(`/analyze/${session.id}/intake`)}
-          className="px-4 py-2 bg-brand-primary text-white rounded hover:bg-brand-hover"
+          className="px-4 py-2 bg-brand-primary text-white rounded-sm hover:bg-brand-hover"
         >
           {t('dashboard.continueAnalysis')}
         </button>
@@ -65,7 +65,7 @@ export default function SessionCard({ session }: SessionCardProps) {
       return (
         <button
           onClick={() => router.push(`/analyze/${session.id}/choice`)}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          className="px-4 py-2 bg-blue-600 text-white rounded-sm hover:bg-blue-700"
         >
           {t('dashboard.viewDetails')}
         </button>
@@ -76,7 +76,7 @@ export default function SessionCard({ session }: SessionCardProps) {
       return (
         <button
           onClick={() => router.push(`/analyze/${session.id}/analysis`)}
-          className="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700"
+          className="px-4 py-2 bg-orange-600 text-white rounded-sm hover:bg-orange-700"
         >
           {t('common.retry')}
         </button>
@@ -92,7 +92,7 @@ export default function SessionCard({ session }: SessionCardProps) {
     return (
       <button
         onClick={() => router.push(resumePath)}
-        className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+        className="px-4 py-2 bg-gray-200 text-gray-800 rounded-sm hover:bg-gray-300"
       >
         {t('dashboard.continueAnalysis')}
       </button>

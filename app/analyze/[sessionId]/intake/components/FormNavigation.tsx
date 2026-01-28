@@ -53,7 +53,7 @@ export default function FormNavigation({
           type="button"
           onClick={onSubmit}
           disabled={isSubmitting}
-          className="flex items-center gap-2 px-6 py-3 bg-brand-primary text-white font-semibold rounded-lg hover:bg-brand-hover transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 px-6 py-3 bg-brand-primary text-white font-semibold rounded-lg hover:bg-brand-hover transition-colors shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSubmitting ? (
             <>
@@ -72,7 +72,7 @@ export default function FormNavigation({
           type="button"
           onClick={onNext}
           disabled={!canProceed || isSubmitting}
-          className="flex items-center gap-2 px-6 py-3 bg-brand-primary text-white font-semibold rounded-lg hover:bg-brand-hover transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 px-6 py-3 bg-brand-primary text-white font-semibold rounded-lg hover:bg-brand-hover transition-colors shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <span>Next</span>
           <ArrowRight className="w-4 h-4" />

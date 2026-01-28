@@ -51,7 +51,7 @@ export default function Step2Environment({ form }: Step2EnvironmentProps) {
           maxLength={limits.user_persona}
           rows={4}
           placeholder={t('intake.userPersonaPlaceholder')}
-          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-brand-light outline-none transition-colors resize-none text-text-primary ${
+          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-brand-light outline-hidden transition-colors resize-none text-text-primary ${
             errors.environment?.user_persona
               ? 'border-severity-1-catastrophic'
               : 'border-border-medium focus:border-brand-primary'
@@ -79,7 +79,7 @@ export default function Step2Environment({ form }: Step2EnvironmentProps) {
           maxLength={limits.competitive_landscape}
           rows={5}
           placeholder={t('intake.competitiveLandscapePlaceholder')}
-          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-brand-light outline-none transition-colors resize-none text-text-primary ${
+          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-brand-light outline-hidden transition-colors resize-none text-text-primary ${
             errors.environment?.competitive_landscape
               ? 'border-severity-1-catastrophic'
               : 'border-border-medium focus:border-brand-primary'
@@ -107,7 +107,7 @@ export default function Step2Environment({ form }: Step2EnvironmentProps) {
           maxLength={limits.regulatory_context}
           rows={4}
           placeholder={t('intake.regulatoryContextPlaceholder')}
-          className="w-full px-4 py-3 border border-border-medium rounded-lg focus:border-brand-primary focus:ring-2 focus:ring-brand-light outline-none transition-colors resize-none text-text-primary"
+          className="w-full px-4 py-3 border border-border-medium rounded-lg focus:border-brand-primary focus:ring-2 focus:ring-brand-light outline-hidden transition-colors resize-none text-text-primary"
         />
         <div className="flex justify-end mt-1">
           <span className={`text-xs ${getCharCounterColor(regulatoryContext.length, limits.regulatory_context)}`}>

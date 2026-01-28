@@ -119,7 +119,7 @@ export default function ReportPage() {
             </div>
             <button
               onClick={() => router.push(`/analyze/${sessionId}/choice`)}
-              className="px-6 py-3 border border-border-medium text-text-primary rounded-lg hover:border-border-dark transition-colors flex-shrink-0"
+              className="px-6 py-3 border border-border-medium text-text-primary rounded-lg hover:border-border-dark transition-colors shrink-0"
             >
               {t('research.backToIdea')}
             </button>
@@ -152,7 +152,7 @@ export default function ReportPage() {
               <div key={vector.vector} className="border-l-4 pl-4" style={{ borderColor: SEVERITY_COLORS[vector.overall_score as keyof typeof SEVERITY_COLORS].border.replace('border-', '') }}>
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-semibold text-text-primary">{getVectorName(vector.vector)}</h3>
-                  <span className={`px-3 py-1 rounded text-sm font-medium ${SEVERITY_COLORS[vector.overall_score as keyof typeof SEVERITY_COLORS].bg} ${SEVERITY_COLORS[vector.overall_score as keyof typeof SEVERITY_COLORS].text}`}>
+                  <span className={`px-3 py-1 rounded-sm text-sm font-medium ${SEVERITY_COLORS[vector.overall_score as keyof typeof SEVERITY_COLORS].bg} ${SEVERITY_COLORS[vector.overall_score as keyof typeof SEVERITY_COLORS].text}`}>
                     {vector.overall_score} - {getSeverityLabel(vector.overall_score)}
                   </span>
                 </div>
@@ -172,7 +172,7 @@ export default function ReportPage() {
                 <div key={idx} className={`p-4 rounded-lg border ${colors.bg} ${colors.border}`}>
                   <div className="flex items-start justify-between mb-2">
                     <h3 className="font-semibold text-text-primary">{vuln.attack_name}</h3>
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${colors.text}`}>
+                    <span className={`px-2 py-1 rounded-sm text-xs font-medium ${colors.text}`}>
                       {vuln.severity_score} - {getSeverityLabel(vuln.severity_score)}
                     </span>
                   </div>

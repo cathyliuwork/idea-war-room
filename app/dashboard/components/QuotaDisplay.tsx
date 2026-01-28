@@ -70,7 +70,7 @@ export default function QuotaDisplay({
           <span className="text-xs text-text-secondary uppercase tracking-wide">
             {t('quota.monthlyUsage')}
           </span>
-          <span className="text-xs px-1.5 py-0.5 bg-brand-primary/10 text-brand-primary rounded">
+          <span className="text-xs px-1.5 py-0.5 bg-brand-primary/10 text-brand-primary rounded-sm">
             {tierName}
           </span>
         </div>

@@ -51,7 +51,7 @@ export default function Step1CoreConcept({ form }: Step1CoreConceptProps) {
           {...register('high_concept')}
           maxLength={limits.high_concept}
           placeholder={t('intake.highConceptPlaceholder')}
-          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-brand-light outline-none transition-colors text-text-primary ${
+          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-brand-light outline-hidden transition-colors text-text-primary ${
             errors.high_concept
               ? 'border-severity-1-catastrophic'
               : 'border-border-medium focus:border-brand-primary'
@@ -79,7 +79,7 @@ export default function Step1CoreConcept({ form }: Step1CoreConceptProps) {
           maxLength={limits.value_proposition}
           rows={4}
           placeholder={t('intake.valuePropositionPlaceholder')}
-          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-brand-light outline-none transition-colors resize-none text-text-primary ${
+          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-brand-light outline-hidden transition-colors resize-none text-text-primary ${
             errors.value_proposition
               ? 'border-severity-1-catastrophic'
               : 'border-border-medium focus:border-brand-primary'
@@ -107,7 +107,7 @@ export default function Step1CoreConcept({ form }: Step1CoreConceptProps) {
           maxLength={limits.success_metric_18m}
           rows={3}
           placeholder={t('intake.successMetricPlaceholder')}
-          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-brand-light outline-none transition-colors resize-none text-text-primary ${
+          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-brand-light outline-hidden transition-colors resize-none text-text-primary ${
             errors.success_metric_18m
               ? 'border-severity-1-catastrophic'
               : 'border-border-medium focus:border-brand-primary'

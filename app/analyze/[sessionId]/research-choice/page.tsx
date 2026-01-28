@@ -129,7 +129,7 @@ export default function ResearchChoicePage() {
             </div>
             <button
               onClick={() => router.push(`/analyze/${sessionId}/choice`)}
-              className="px-6 py-3 border border-border-medium text-text-primary rounded-lg hover:border-border-dark transition-colors flex-shrink-0"
+              className="px-6 py-3 border border-border-medium text-text-primary rounded-lg hover:border-border-dark transition-colors shrink-0"
             >
               {t('research.backToIdea')}
             </button>

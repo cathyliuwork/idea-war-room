@@ -168,7 +168,7 @@ export default function Dashboard() {
           )}
 
           <button
-            className={`px-6 py-3 font-semibold rounded-lg transition-colors shadow-sm ${
+            className={`px-6 py-3 font-semibold rounded-lg transition-colors shadow-xs ${
               isCreateDisabled
                 ? 'bg-border-medium text-text-tertiary cursor-not-allowed'
                 : 'bg-brand-primary text-white hover:bg-brand-hover'

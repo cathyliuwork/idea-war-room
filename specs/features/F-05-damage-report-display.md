@@ -388,7 +388,7 @@ export default function VulnerabilityCard({ vulnerability }) {
     <div className={`border-l-4 rounded-lg p-4 ${severityColor}`}>
       <div className="flex justify-between items-start mb-2">
         <h4 className="font-bold">{vulnerability.simulation}</h4>
-        <span className="px-2 py-1 rounded text-sm font-semibold">
+        <span className="px-2 py-1 rounded-sm text-sm font-semibold">
           Score: {vulnerability.score}
         </span>
       </div>

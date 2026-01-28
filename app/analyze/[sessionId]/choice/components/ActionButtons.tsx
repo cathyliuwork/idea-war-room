@@ -92,7 +92,7 @@ export default function ActionButtons({
         }`}
       >
         <div className="flex items-start mb-4">
-          <div className="flex-shrink-0 mr-4">
+          <div className="shrink-0 mr-4">
             <div className="w-12 h-12 bg-brand-light rounded-lg flex items-center justify-center">
               <svg
                 className="w-7 h-7 text-brand-primary"
@@ -145,7 +145,7 @@ export default function ActionButtons({
       {/* Online Research Card */}
       <div className="bg-white rounded-lg shadow-md border-2 border-gray-200 hover:border-brand-primary p-6 transition-all flex flex-col">
         <div className="flex items-start mb-4">
-          <div className="flex-shrink-0 mr-4">
+          <div className="shrink-0 mr-4">
             <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
               <svg
                 className="w-7 h-7 text-blue-600"
