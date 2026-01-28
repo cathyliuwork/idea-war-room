@@ -16,10 +16,8 @@ import { getValidPromptLanguage } from '@/lib/llm/prompts/language-instructions'
  * SECURITY: Verifies session ownership before triggering research
  */
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { sessionId: string } }
-) {
+export async function POST(request: NextRequest, props: { params: Promise<{ sessionId: string }> }) {
+  const params = await props.params;
   try {
     const { supabase, user } = await createAuthenticatedSupabaseClient();
 
@@ -93,7 +91,7 @@ export async function POST(
     }
 
     // 2. Get language from cookie for synthesis output
-    const language = getValidPromptLanguage(getLanguage());
+    const language = getValidPromptLanguage(await getLanguage());
 
     // 3. Conduct research (only the requested type)
     console.log(`Starting ${type} research for session ${params.sessionId} in ${language}...`);

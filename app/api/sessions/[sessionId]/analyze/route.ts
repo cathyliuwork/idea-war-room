@@ -14,10 +14,8 @@ import { getValidPromptLanguage } from '@/lib/llm/prompts/language-instructions'
  * SECURITY: Verifies session ownership before triggering analysis
  */
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { sessionId: string } }
-) {
+export async function POST(request: NextRequest, props: { params: Promise<{ sessionId: string }> }) {
+  const params = await props.params;
   try {
     const { supabase, user } = await createAuthenticatedSupabaseClient();
 
@@ -50,7 +48,7 @@ export async function POST(
     }
 
     // 2. Get language from cookie
-    const language = getValidPromptLanguage(getLanguage());
+    const language = getValidPromptLanguage(await getLanguage());
 
     // 3. Run MVTA analysis (completely independent - no research data)
     console.log(`Starting MVTA analysis for session ${params.sessionId} in ${language}...`);

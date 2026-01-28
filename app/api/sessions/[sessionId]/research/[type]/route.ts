@@ -9,8 +9,9 @@ import { isValidResearchType } from '@/lib/constants/research';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { sessionId: string; type: string } }
+  props: { params: Promise<{ sessionId: string; type: string }> }
 ) {
+  const params = await props.params;
   try {
     const { supabase } = await createAuthenticatedSupabaseClient();
     const { sessionId, type } = params;
@@ -86,8 +87,9 @@ export async function GET(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { sessionId: string; type: string } }
+  props: { params: Promise<{ sessionId: string; type: string }> }
 ) {
+  const params = await props.params;
   try {
     const { supabase, user } = await createAuthenticatedSupabaseClient();
     const { sessionId, type } = params;

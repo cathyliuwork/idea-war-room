@@ -10,10 +10,8 @@ import { verifySessionOwnership } from '@/lib/auth/session-ownership';
  *
  * SECURITY: Verifies session ownership before returning status
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { sessionId: string } }
-) {
+export async function GET(request: NextRequest, props: { params: Promise<{ sessionId: string }> }) {
+  const params = await props.params;
   try {
     const { supabase, user } = await createAuthenticatedSupabaseClient();
 

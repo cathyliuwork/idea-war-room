@@ -14,10 +14,8 @@ import { z } from 'zod';
  *
  * SECURITY: Verifies session ownership before accepting submission
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { sessionId: string } }
-) {
+export async function POST(request: NextRequest, props: { params: Promise<{ sessionId: string }> }) {
+  const params = await props.params;
   try {
     const body = await request.json();
     const { structured_idea, source = 'form' } = body;
@@ -110,10 +108,8 @@ export async function POST(
  *
  * SECURITY: Verifies session ownership before returning sensitive data
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { sessionId: string } }
-) {
+export async function GET(request: NextRequest, props: { params: Promise<{ sessionId: string }> }) {
+  const params = await props.params;
   try {
     const { supabase, user } = await createAuthenticatedSupabaseClient();
 

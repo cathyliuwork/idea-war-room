@@ -7,7 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -21,28 +21,32 @@
     "@types/jsonwebtoken": "9.0.5",
     "jsonwebtoken": "9.0.2",
     "lucide-react": "0.292.0",
-    "next": "14.2.18",
+    "next": "16.1.6",
     "pg": "^8.16.3",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
     "react-hook-form": "7.48.2",
     "react-markdown": "9.0.1",
     "zod": "3.22.4"
   },
   "devDependencies": {
-    "@playwright/test": "1.40.1",
+    "@next/eslint-plugin-next": "16.1.6",
+    "@eslint/eslintrc": "^3.0.0",
+    "@playwright/test": "1.58.0",
+    "@typescript-eslint/parser": "^8.0.0",
     "@tailwindcss/postcss": "^4.1.18",
     "@tailwindcss/vite": "^4.1.18",
     "@testing-library/react": "14.1.2",
     "@testing-library/user-event": "14.5.1",
     "@types/node": "^20",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
+    "@types/react": "19.2.10",
+    "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "4.2.1",
     "@vitest/ui": "1.0.4",
-    "eslint": "^8",
-    "eslint-config-next": "14.2.18",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.6",
     "eslint-config-prettier": "9.1.0",
+    "eslint-plugin-react-hooks": "^5.0.0",
     "jsdom": "23.0.1",
     "msw": "2.0.11",
     "postcss": "^8",
@@ -51,5 +55,11 @@
     "typescript": "^5",
     "vitest": "1.0.4"
   },
-  "packageManager": "pnpm@10.15.1+sha512.34e538c329b5553014ca8e8f4535997f96180a1d0f614339357449935350d924e22f8614682191264ec33d1462ac21561aff97f6bb18065351c162c7e8f6de67"
+  "packageManager": "pnpm@10.15.1",
+  "pnpm": {
+    "overrides": {
+      "@types/react": "19.2.10",
+      "@types/react-dom": "19.2.3"
+    }
+  }
 }

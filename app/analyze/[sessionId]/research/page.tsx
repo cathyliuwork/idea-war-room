@@ -111,7 +111,6 @@ export default function ResearchPage() {
         handleStartResearch();
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading, user, sessionId, type, isValidType]);
 
   if (isLoading || !user) {

@@ -15,12 +15,12 @@ export const metadata: Metadata = {
   description: 'AI-powered Multi-Vector Threat Analysis for startup ideas',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const language = getLanguage();
+  const language = await getLanguage();
   const translations = getTranslations(language);
 
   return (

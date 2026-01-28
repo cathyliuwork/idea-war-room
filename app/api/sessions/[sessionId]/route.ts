@@ -9,10 +9,8 @@ import { createAuthenticatedSupabaseClient } from '@/lib/auth/middleware';
  *
  * GET /api/sessions/[sessionId]
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { sessionId: string } }
-) {
+export async function GET(request: NextRequest, props: { params: Promise<{ sessionId: string }> }) {
+  const params = await props.params;
   try {
     const { supabase } = await createAuthenticatedSupabaseClient();
 

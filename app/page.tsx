@@ -1,12 +1,12 @@
 import { getTranslations } from '@/i18n';
 import { getLanguage } from '@/i18n/get-language';
 
-export default function Home() {
+export default async function Home() {
   const isMockMode = process.env.AUTH_MODE === 'mock';
   const parentLoginUrl = process.env.NEXT_PUBLIC_PARENT_LOGIN_URL || '/';
 
   // Get translations
-  const language = getLanguage();
+  const language = await getLanguage();
   const t = getTranslations(language);
 
   // Mock mode: show mock login button

@@ -40,9 +40,10 @@ export function clearSessionCookie(response: NextResponse): void {
  *
  * @returns JWT token string or null if not found
  */
-export function getSessionToken(): string | null {
+export async function getSessionToken(): Promise<string | null> {
   try {
-    return cookies().get(SESSION_COOKIE_NAME)?.value || null;
+    const cookieStore = await cookies();
+    return cookieStore.get(SESSION_COOKIE_NAME)?.value || null;
   } catch (error) {
     // Cookies might not be available in some contexts
     return null;

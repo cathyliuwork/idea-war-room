@@ -14,9 +14,9 @@ export const LANGUAGE_COOKIE_NAME = 'lang';
  * Get language from cookie (server-side)
  * Returns default language if cookie not set or invalid
  */
-export function getLanguage(): Language {
+export async function getLanguage(): Promise<Language> {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const lang = cookieStore.get(LANGUAGE_COOKIE_NAME)?.value;
 
     if (lang && SUPPORTED_LANGUAGES.includes(lang as Language)) {

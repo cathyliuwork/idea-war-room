@@ -17,7 +17,7 @@ import { User } from '@/types/auth';
  * @throws Error if no session token or invalid token
  */
 export async function getCurrentUser(): Promise<User> {
-  const token = getSessionToken();
+  const token = await getSessionToken();
 
   if (!token) {
     throw new Error('No session token');
