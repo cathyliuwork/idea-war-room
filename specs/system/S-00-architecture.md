@@ -66,7 +66,7 @@ C4Container
     Person(user, "User", "Founder")
 
     Container_Boundary(app, "Idea War Room Application") {
-        Container(webapp, "Web Application", "Next.js 14, React 18, Tailwind CSS", "Desktop-first responsive UI")
+        Container(webapp, "Web Application", "Next.js 16, React 19, Tailwind CSS 4", "Desktop-first responsive UI")
         Container(api, "API Layer", "Next.js API Routes, TypeScript", "RESTful endpoints")
         Container(db, "Database", "Supabase (PostgreSQL)", "Ideas, reports, sessions, feedback")
     }
@@ -88,9 +88,9 @@ C4Container
 ## Tech Stack
 
 ### Frontend
-- **Framework**: Next.js 14 (App Router)
-- **UI Library**: React 18
-- **Styling**: Tailwind CSS 3.x
+- **Framework**: Next.js 16 (App Router) (16.1.6)
+- **UI Library**: React 19 (19.2.4)
+- **Styling**: Tailwind CSS 4 (4.1.18)
 - **State Management**: React Context + hooks (no Redux for MVP)
 - **Form Handling**: React Hook Form + Zod validation
 - **Markdown Rendering**: react-markdown (for damage reports)

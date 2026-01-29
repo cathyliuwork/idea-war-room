@@ -187,7 +187,7 @@ git add .
 # 3. 创建初始提交
 git commit -m "feat: Complete Phase 0 - Project setup and configuration
 
-- Initialize Next.js 14 with TypeScript and Tailwind CSS
+- Initialize Next.js 16 with TypeScript and Tailwind CSS 4
 - Configure Supabase database schema (6 tables with RLS)
 - Set up testing infrastructure (Vitest, Playwright)
 - Create complete directory structure

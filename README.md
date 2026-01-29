@@ -47,7 +47,7 @@ Idea War Room helps founders stress-test their startup ideas through professiona
 
 ## Tech Stack
 
-- **Frontend**: Next.js 14 (App Router), React 18, Tailwind CSS, TypeScript
+- **Frontend**: Next.js 16 (App Router) (16.1.6), React 19 (19.2.4), Tailwind CSS 4 (4.1.18), TypeScript
 - **Backend**: Next.js API Routes, TypeScript
 - **Database**: Supabase (PostgreSQL + Auth + Realtime)
 - **LLM Provider**: AI Builders API (https://space.ai-builders.com/backend/openapi.json)

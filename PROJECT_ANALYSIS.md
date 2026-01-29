@@ -6,9 +6,9 @@
 
 Idea War Room 构建在现代全栈 TypeScript 生态之上，强调类型安全、开发效率与 AI 能力的深度集成。
 
-- **Framework**: [Next.js 14 (App Router)](https://nextjs.org/) - 服务端渲染与 API 路由一体化。
+- **Framework**: [Next.js 16 (App Router) (16.1.6)](https://nextjs.org/) - 服务端渲染与 API 路由一体化。
 - **Language**: TypeScript 5.x - 全链路类型安全。
-- **Styling**: Tailwind CSS - 实用主义优先的原子化 CSS 框架。
+- **Styling**: Tailwind CSS 4 (4.1.18) - 实用主义优先的原子化 CSS 框架。
 - **Database & Auth**: [Supabase](https://supabase.com/) - 基于 PostgreSQL 的开源 Firebase 替代品，提供 Auth, DB, Vector, Edge Functions。
 - **AI / LLM**:
   - **Models**: OpenAI (GPT-4o), Anthropic (Claude 3.5 Sonnet)。

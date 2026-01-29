@@ -260,7 +260,7 @@ When adding new features post-MVP, copy the structure from any F-XX file or the 
 **What**: 30,000 ft view - system boundaries, tech stack, data flow, deployment
 
 **Key Concepts**:
-- Next.js 14 App Router + React 18 + Tailwind CSS
+- Next.js 16 App Router + React 19 + Tailwind CSS 4
 - Supabase (PostgreSQL + Auth + Realtime)
 - AI Builders API (LLM and Search)
 - Session-based analysis workflow
@@ -330,10 +330,10 @@ When adding new features post-MVP, copy the structure from any F-XX file or the 
 ## Tech Stack
 
 **Frontend**:
-- Next.js 14 (App Router)
-- React 18
+- Next.js 16 (App Router) (16.1.6)
+- React 19 (19.2.4)
 - TypeScript 5.x
-- Tailwind CSS 3.x
+- Tailwind CSS 4 (4.1.18)
 - React Hook Form + Zod validation
 
 **Backend**:

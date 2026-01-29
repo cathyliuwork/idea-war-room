@@ -6,9 +6,9 @@ Congratulations! The foundational setup for the Idea War Room MVP is complete.
 
 ### What's Been Set Up
 
-#### 1. ✅ Next.js 14 Project
+#### 1. ✅ Next.js 16 Project (16.1.6)
 - TypeScript configured with strict mode
-- Tailwind CSS with complete design system
+- Tailwind CSS 4 with complete design system (4.1.18)
 - App Router structure
 - Environment configuration
 
